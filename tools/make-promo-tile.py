@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Renders the 440x280 promotional tile for the Chrome Web Store listing.
+"""Renders the promotional tiles for the Chrome Web Store listing.
+
+Small tile 440x280 (shown on the listing) and marquee 1400x560 (only used if
+Google features the extension, but the form asks for it).
 
 Run with: python tools/make-promo-tile.py
 
@@ -19,31 +22,35 @@ PAPER = (240, 237, 232)
 BRASS = (201, 171, 76)
 MUTED = (139, 152, 165)
 
-W, H = 440, 280
-img = Image.new("RGB", (W, H), NAVY)
-d = ImageDraw.Draw(img)
+def tile(W, H, k):
+    """k scales every measurement, so both sizes share one layout."""
+    img = Image.new("RGB", (W, H), NAVY)
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, int(6 * k), H), fill=BRASS)      # franja de acento
 
-# Franja de acento a la izquierda, como en las tarjetas del feed.
-d.rectangle((0, 0, 6, H), fill=BRASS)
+    serif = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", int(46 * k))
+    sans = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", int(17 * k))
+    sans_b = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", int(14 * k))
 
-serif = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 46)
-sans = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 17)
-sans_b = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", 14)
+    side = int(72 * k)
+    icon = Image.open(ICON).convert("RGBA").resize((side, side), Image.LANCZOS)
+    img.paste(icon, (int(40 * k), int(44 * k)), icon)
 
-icon = Image.open(ICON).convert("RGBA").resize((72, 72), Image.LANCZOS)
-img.paste(icon, (40, 44), icon)
+    d.text((int(132 * k), int(52 * k)), "FullShot", font=serif, fill=PAPER)
+    d.text((int(134 * k), int(106 * k)), "FULL PAGE SCREEN CAPTURE", font=sans_b, fill=BRASS)
+    d.line((int(40 * k), int(168 * k), W - int(40 * k), int(168 * k)), fill=(42, 52, 66), width=1)
 
-d.text((132, 52), "FullShot", font=serif, fill=PAPER)
-d.text((134, 106), "FULL PAGE SCREEN CAPTURE", font=sans_b, fill=BRASS)
+    for i, line in enumerate([
+        "The whole page, not just the screen.",
+        "PNG, JPG or PDF. Nothing leaves your computer.",
+    ]):
+        d.text((int(40 * k), int(190 * k) + i * int(26 * k)), line,
+               font=sans, fill=MUTED if i else PAPER)
+    return img
 
-d.line((40, 168, W - 40, 168), fill=(42, 52, 66), width=1)
 
-for i, line in enumerate([
-    "The whole page, not just the screen.",
-    "PNG, JPG or PDF. Nothing leaves your computer.",
-]):
-    d.text((40, 190 + i * 26), line, font=sans, fill=MUTED if i else PAPER)
-
-path = os.path.join(OUT, "promo-tile-440x280.png")
-img.save(path)
-print("escrito:", path, img.size)
+for w, h, k, name in ((440, 280, 1.0, "promo-tile-440x280"),
+                      (1400, 560, 2.0, "promo-marquee-1400x560")):
+    path = os.path.join(OUT, name + ".png")
+    tile(w, h, k).save(path)
+    print("escrito:", path, (w, h))
