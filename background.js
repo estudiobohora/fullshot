@@ -21,9 +21,14 @@ chrome.commands.onCommand.addListener(async (command) => {
   else if (command === "capture-region") startRegion(tab);
 });
 
+// Chrome refuses to let any extension script or capture these, so we say so
+// instead of failing halfway with a red badge. The Web Store lives at two
+// hosts: the current one and the older chrome.google.com/webstore path, which
+// is where the developer dashboard still sits.
 function isBlocked(url) {
-  return /^(chrome|edge|about|devtools|chrome-extension):/i.test(url) ||
-         url.startsWith("https://chromewebstore.google.com");
+  return /^(chrome|edge|about|devtools|chrome-extension|view-source):/i.test(url) ||
+         url.startsWith("https://chromewebstore.google.com") ||
+         url.startsWith("https://chrome.google.com/webstore");
 }
 
 function sleep(ms) {

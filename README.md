@@ -48,7 +48,7 @@ Chrome will not let an extension capture anything outside the visible viewport, 
 
 ## Known limits
 
-- Does not work on `chrome://`, `chrome-extension://` or the Chrome Web Store. That is a Chrome restriction, not a bug.
+- Does not work on `chrome://`, `chrome-extension://`, the Chrome Web Store or the developer dashboard. Chrome blocks extensions from touching those pages, so no extension can capture them.
 - Pages that scroll inside an inner container instead of the document body are not captured in full.
 - A Chrome canvas tops out around 250 megapixels. On very tall pages the capture is scaled down automatically and the preview tells you so.
 - The PDF comes out as a single long page. Past 200 inches tall it is split across several.
