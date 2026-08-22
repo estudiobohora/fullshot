@@ -36,8 +36,10 @@
     border-bottom: 1px solid var(--border);
   }
   .brand { font-weight: 700; letter-spacing: -0.01em; margin-right: 4px; }
-  #opts { padding: 8px 12px; color: var(--muted); }
+  #opts { padding: 8px 10px; color: var(--muted); display: flex; align-items: center; }
   #opts:hover { color: var(--text); }
+  /* Re-running the capture is not an export, so it sits apart from the three. */
+  #again { margin-right: 6px; }
   .meta { color: var(--muted); font-size: 12px; margin-right: auto; }
   .meta b { color: var(--text); font-weight: 600; }
   button {
@@ -49,12 +51,19 @@
     border-radius: 8px;
     padding: 8px 14px;
     cursor: pointer;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
-  button:hover { background: #2A3442; }
-  /* Brass is light: text on top goes navy, not white. */
-  button.primary { background: var(--accent); border-color: var(--accent); color: #0D1B2A; }
-  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-  button:disabled { opacity: .5; cursor: default; }
+  button:hover {
+    background: #2A3442;
+    border-color: var(--info);
+    box-shadow: 0 0 0 3px rgba(95, 159, 154, .16), 0 0 18px rgba(95, 159, 154, .38);
+  }
+  /* Every button looks the same. The default format is marked with a hairline
+     in brass instead of a filled button, so it reads as a preference and not
+     as "press this one". */
+  button.primary { border-color: var(--accent); }
+  button.primary:hover { border-color: var(--info); }
+  button:disabled { opacity: .5; cursor: default; box-shadow: none; }
   main { padding: 24px; display: flex; justify-content: center; }
   #shell {
     background: var(--surface);
@@ -87,11 +96,12 @@
   <header>
     <span class="brand">FullShot</span>
     <span class="meta" id="meta">Building the capture…</span>
+    <button id="again">Capture again</button>
     <button id="copy">Copy</button>
     <button id="pdf">Download PDF</button>
     <button id="jpg">Download JPG</button>
     <button id="png">Download PNG</button>
-    <button id="opts" title="Options">Options</button>
+    <button id="opts" title="Options" aria-label="Options"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </header>
   <div id="note" class="note hidden"></div>
   <main>

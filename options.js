@@ -10,6 +10,7 @@ const els = {
   save: $("save"),
   reset: $("reset"),
   saved: $("saved"),
+  close: $("close"),
 };
 
 // A realistic example, so the preview shows what the tokens actually produce.
@@ -69,5 +70,9 @@ els.reset.addEventListener("click", async () => {
   await chrome.storage.sync.set(FS_DEFAULTS);
   fillForm(Object.assign({}, FS_DEFAULTS));
 });
+
+// The options page opens in its own tab, so it needs a way out. Closing it
+// lands you back on whatever you were on, usually the capture.
+els.close.addEventListener("click", () => window.close());
 
 fsGetSettings().then(fillForm);

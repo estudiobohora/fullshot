@@ -42,6 +42,14 @@ Web Store in August 2026.
    count. A step cap gives up on tall pages, which is precisely where lazy
    loading leaves white gaps.
 
+## Capture again
+
+The viewer stores the id of the tab it came from and asks the service worker to
+re-run the capture there. This only works because `activeTab` survives until the
+tab navigates or closes, so the grant from the first capture is usually still
+live. When it is not, `executeScript` fails, the error badge appears on the tab
+and the viewer says to use the keyboard shortcut instead.
+
 ## Design
 
 Colors follow the ToolTank palette: Navy `#0D1B2A`, ToolTank Black `#1C1F2A`,

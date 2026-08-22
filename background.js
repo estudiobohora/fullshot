@@ -146,6 +146,7 @@ async function start(tab) {
         totalHeight: docHeight,   // the final height, or the viewer would crop
         title: tab.title || "screenshot",
         url: tab.url || "",
+        sourceTabId: tab.id,
         createdAt: Date.now(),
       },
     });
@@ -172,6 +173,30 @@ async function notifyBlocked(tabId) {
   await setBadge(tabId, "✕", "#dc2626");
   setTimeout(() => setBadge(tabId, ""), 3000);
 }
+
+// "Capture again" from the viewer. captureVisibleTab only sees the visible tab,
+// so the original one has to be focused first.
+//
+// activeTab is granted by a user gesture and lasts until that tab navigates or
+// closes, which is why this works at all: the grant from the original capture
+// is usually still live. If the tab moved on, executeScript fails and the error
+// badge shows up on the tab itself.
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (!msg || msg.type !== "FS_RECAPTURE") return;
+  (async () => {
+    try {
+      if (busy) throw new Error("A capture is already running.");
+      const tab = await chrome.tabs.get(msg.tabId);
+      await chrome.windows.update(tab.windowId, { focused: true });
+      await chrome.tabs.update(tab.id, { active: true });
+      start(tab);
+      sendResponse({ ok: true });
+    } catch (err) {
+      sendResponse({ ok: false, error: String((err && err.message) || err) });
+    }
+  })();
+  return true;   // async response
+});
 
 // Cleanup: drops stored captures older than 1 hour on startup.
 chrome.runtime.onStartup.addListener(cleanup);

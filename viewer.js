@@ -15,11 +15,13 @@ const els = {
   pdf: $("pdf"),
   copy: $("copy"),
   opts: $("opts"),
+  again: $("again"),
 };
 
 let canvas = null;
 let baseName = "screenshot";
 let settings = Object.assign({}, FS_DEFAULTS);
+let sourceTabId = null;
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -51,7 +53,10 @@ function setMeta(width, height, slices, url) {
 async function build() {
   settings = await fsGetSettings();
   const preferred = { png: els.png, jpeg: els.jpg, pdf: els.pdf }[settings.format];
-  if (preferred) preferred.classList.add("primary");
+  if (preferred) {
+    preferred.classList.add("primary");
+    preferred.title = "Your default format";
+  }
 
   const key = new URLSearchParams(location.search).get("key");
   if (!key) return fail("There is no capture to show.");
@@ -61,6 +66,9 @@ async function build() {
     return fail("The capture expired or was not found. Try again.");
   }
   await chrome.storage.local.remove(key);
+
+  sourceTabId = typeof stored.sourceTabId === "number" ? stored.sourceTabId : null;
+  if (sourceTabId === null) els.again.disabled = true;
 
   baseName = fsBuildFilename(settings.filename, {
     title: stored.title,
@@ -154,6 +162,28 @@ els.jpg.addEventListener("click", async () => {
 });
 
 els.opts.addEventListener("click", () => chrome.runtime.openOptionsPage());
+
+els.again.addEventListener("click", async () => {
+  els.again.disabled = true;
+  els.again.textContent = "Starting…";
+  let res;
+  try {
+    res = await chrome.runtime.sendMessage({ type: "FS_RECAPTURE", tabId: sourceTabId });
+  } catch (err) {
+    res = { ok: false, error: String((err && err.message) || err) };
+  }
+  if (res && res.ok) {
+    // The new capture opens its own viewer, so this tab would just pile up.
+    window.close();
+    return;
+  }
+  showNote(
+    "Could not start a new capture on the original tab. It may have been closed " +
+    "or navigated away. Go to the page and press Alt+Shift+P."
+  );
+  els.again.textContent = "Capture again";
+  els.again.disabled = false;
+});
 
 els.copy.addEventListener("click", async () => {
   const original = els.copy.textContent;

@@ -12,7 +12,9 @@ A homemade replacement for GoFullPage. Captures the entire page, all the way dow
 
 ## Use
 
-Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. The highlighted one is whichever format you set as default.
+Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. The one outlined in brass is whichever format you set as default.
+
+**Capture again** re-runs the capture on the same page without leaving the viewer. It works as long as that tab is still open on the same page.
 
 To change the shortcut: `chrome://extensions/shortcuts`.
 
