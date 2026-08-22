@@ -45,6 +45,17 @@ Web Store in August 2026.
    count. A step cap gives up on tall pages, which is precisely where lazy
    loading leaves white gaps.
 
+## Crop
+
+Cropping happens in the viewer, after the capture, not by selecting on the page
+before it. Selecting first sounds more direct but a region taller than the
+viewport still needs the scroll-and-stitch machinery, so it buys nothing and
+costs a whole coordinate system.
+
+The preview is scaled down to fit the shell, so a rectangle drawn on screen is
+multiplied by `canvas.width / previewBox.width` before cutting. `fullCanvas`
+holds the uncropped version so the crop can be undone.
+
 ## Capture again
 
 The viewer stores the id of the tab it came from and asks the service worker to

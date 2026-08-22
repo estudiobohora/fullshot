@@ -88,6 +88,9 @@
     outline-offset: 2px;
   }
   #again { margin-right: 4px; }
+  #crop, #gear { padding: 8px 10px; color: var(--muted); display: flex; align-items: center; }
+  #crop:hover { color: var(--text); }
+  #crop.armed { color: var(--accent); border-color: var(--accent); }
   #gear { padding: 8px 10px; color: var(--muted); display: flex; align-items: center; }
   #gear:hover { color: var(--text); }
   #gear.open { color: var(--accent); }
@@ -125,6 +128,31 @@
     width: 100%;
   }
   #preview { display: block; width: 100%; height: auto; }
+
+  /* Selección de área. El marco va sobre la vista previa y todo lo de fuera se
+     oscurece, para que se lea qué parte se queda. */
+  #shell { position: relative; }
+  #shell.selecting { cursor: crosshair; }
+  #shell.selecting #preview { user-select: none; }
+  #sel {
+    position: absolute;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 9999px rgba(13, 27, 42, .62);
+    pointer-events: none;
+  }
+  #selhint {
+    position: absolute;
+    left: 50%;
+    top: 18px;
+    transform: translateX(-50%);
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    pointer-events: none;
+  }
   /* This sits on the light surface, not on navy, so it needs its own colour.
      var(--muted) here measured 2.52:1, well under the 4.5:1 floor. */
   #status { padding: 60px 20px; text-align: center; color: #55606E; }
@@ -161,6 +189,8 @@
       <button id="pdf">Download PDF</button>
       <button id="jpg">Download JPG</button>
       <button id="png">Download PNG</button>
+      <button id="crop" title="Select an area to crop" aria-label="Select an area to crop"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+      <button id="uncrop" class="hidden" title="Undo crop">Undo crop</button>
       <button id="gear" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
     <div id="settings" class="hidden">
@@ -186,6 +216,8 @@
     <div id="shell">
       <div id="status">Stitching the slices…</div>
       <img id="preview" class="hidden" alt="Preview of the capture">
+      <div id="sel" class="hidden"></div>
+      <div id="selhint" class="hidden">Drag over the area you want. Esc to cancel.</div>
     </div>
   </main>
   <script src="settings.js"></script>

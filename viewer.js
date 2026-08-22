@@ -20,6 +20,11 @@ const els = {
   quality: $("quality"),
   qval: $("qval"),
   hideFixed: $("hideFixed"),
+  shell: $("shell"),
+  crop: $("crop"),
+  uncrop: $("uncrop"),
+  sel: $("sel"),
+  selhint: $("selhint"),
 };
 
 let canvas = null;
@@ -27,6 +32,7 @@ let baseName = "screenshot";
 let settings = Object.assign({}, FS_DEFAULTS);
 let sourceTabId = null;
 let source = null;              // title / url / createdAt of the capture
+let fullCanvas = null;          // the uncropped capture, kept so a crop can be undone
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -115,6 +121,7 @@ async function build() {
     );
   }
 
+  fullCanvas = canvas;          // kept so Undo crop can restore it
   els.preview.src = canvas.toDataURL("image/png");
   els.preview.classList.remove("hidden");
   els.status.classList.add("hidden");
@@ -134,6 +141,108 @@ function currentName() {
 }
 
 
+
+// --- Crop -----------------------------------------------------------------
+// The preview is scaled down to fit the shell, so a rectangle drawn on screen
+// has to be mapped back to the real canvas before cutting anything.
+
+let dragging = false;
+let dragStart = null;
+
+function armCrop(on) {
+  els.shell.classList.toggle("selecting", on);
+  els.crop.classList.toggle("armed", on);
+  els.selhint.classList.toggle("hidden", !on);
+  if (!on) {
+    els.sel.classList.add("hidden");
+    dragging = false;
+    dragStart = null;
+  }
+}
+
+function rectFrom(a, b) {
+  return {
+    left: Math.min(a.x, b.x),
+    top: Math.min(a.y, b.y),
+    width: Math.abs(a.x - b.x),
+    height: Math.abs(a.y - b.y),
+  };
+}
+
+function pointIn(ev) {
+  const r = els.preview.getBoundingClientRect();
+  return {
+    x: Math.min(Math.max(ev.clientX - r.left, 0), r.width),
+    y: Math.min(Math.max(ev.clientY - r.top, 0), r.height),
+  };
+}
+
+els.crop.addEventListener("click", () => {
+  if (!canvas) return;
+  armCrop(!els.shell.classList.contains("selecting"));
+});
+
+els.shell.addEventListener("mousedown", (ev) => {
+  if (!els.shell.classList.contains("selecting")) return;
+  ev.preventDefault();
+  dragging = true;
+  dragStart = pointIn(ev);
+  els.sel.classList.remove("hidden");
+});
+
+window.addEventListener("mousemove", (ev) => {
+  if (!dragging) return;
+  const r = rectFrom(dragStart, pointIn(ev));
+  const box = els.preview.getBoundingClientRect();
+  const shell = els.shell.getBoundingClientRect();
+  const offsetTop = box.top - shell.top;
+  els.sel.style.left = r.left + "px";
+  els.sel.style.top = (r.top + offsetTop) + "px";
+  els.sel.style.width = r.width + "px";
+  els.sel.style.height = r.height + "px";
+});
+
+window.addEventListener("mouseup", (ev) => {
+  if (!dragging) return;
+  dragging = false;
+  const r = rectFrom(dragStart, pointIn(ev));
+  // A stray click is not a selection.
+  if (r.width < 12 || r.height < 12) { armCrop(false); return; }
+
+  const box = els.preview.getBoundingClientRect();
+  const scale = canvas.width / box.width;     // preview is scaled to fit
+  applyCrop(
+    Math.round(r.left * scale),
+    Math.round(r.top * scale),
+    Math.round(r.width * scale),
+    Math.round(r.height * scale)
+  );
+  armCrop(false);
+});
+
+window.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") armCrop(false);
+});
+
+function applyCrop(x, y, w, h) {
+  const cut = document.createElement("canvas");
+  cut.width = Math.max(1, Math.min(w, canvas.width - x));
+  cut.height = Math.max(1, Math.min(h, canvas.height - y));
+  const ctx = cut.getContext("2d", { alpha: false });
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, cut.width, cut.height);
+  ctx.drawImage(canvas, x, y, cut.width, cut.height, 0, 0, cut.width, cut.height);
+  canvas = cut;
+  els.preview.src = canvas.toDataURL("image/png");
+  els.uncrop.classList.remove("hidden");
+}
+
+els.uncrop.addEventListener("click", () => {
+  if (!fullCanvas) return;
+  canvas = fullCanvas;
+  els.preview.src = canvas.toDataURL("image/png");
+  els.uncrop.classList.add("hidden");
+});
 
 function toBlob(type, quality) {
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
