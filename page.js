@@ -1,6 +1,6 @@
-// FullShot — content script inyectado bajo demanda.
-// Controla el scroll de la página y prepara el DOM para que los tramos
-// se peguen sin barras de scroll ni headers fijos repetidos.
+// FullShot — content script injected on demand.
+// Controls page scrolling and prepares the DOM so the slices stitch together
+// without scrollbars or repeated fixed headers.
 
 (() => {
   if (window.__fullshotInstalled) return;
@@ -88,7 +88,7 @@
     state.hiddenFixed = [];
   }
 
-  // Recorre la página una vez para disparar imágenes lazy-load antes de medir.
+  // Walks the page once to trigger lazy-loaded images before measuring.
   async function warmLazyContent() {
     const vh = window.innerHeight;
     let h = docHeight();
@@ -156,6 +156,6 @@
           sendResponse({ ok: false });
       }
     })();
-    return true; // respuesta asíncrona
+    return true; // async response
   });
 })();

@@ -1,9 +1,9 @@
 // FullShot — service worker (MV3)
-// Orquesta: inyecta el content script, hace scroll + captura por tramos,
-// guarda los tramos y abre el visor para armar la imagen final.
+// Orchestrates: injects the content script, scrolls and captures slice by slice,
+// stores the slices and opens the viewer to stitch the final image.
 
-const CAPTURE_INTERVAL_MS = 600; // captureVisibleTab está limitado a ~2 llamadas/seg
-const SETTLE_MS = 180; // espera tras hacer scroll para que la página repinte
+const CAPTURE_INTERVAL_MS = 600; // captureVisibleTab is capped at ~2 calls/sec
+const SETTLE_MS = 180; // wait after scrolling so the page repaints
 
 let busy = false;
 
@@ -31,7 +31,7 @@ function ask(tabId, message) {
 }
 
 async function captureVisible(windowId) {
-  // Reintenta si Chrome nos frena por el límite de capturas por segundo.
+  // Retry if Chrome throttles us on the captures-per-second limit.
   for (let attempt = 0; attempt < 6; attempt++) {
     try {
       return await chrome.tabs.captureVisibleTab(windowId, {
@@ -46,10 +46,10 @@ async function captureVisible(windowId) {
       throw err;
     }
   }
-  throw new Error("Chrome limitó las capturas. Intenta de nuevo.");
+  throw new Error("Chrome throttled the captures. Try again.");
 }
 
-// Mide una captura (data URL) sin DOM, usando createImageBitmap.
+// Measures a capture (data URL) without a DOM, using createImageBitmap.
 async function measure(dataUrl) {
   const blob = await (await fetch(dataUrl)).blob();
   const bmp = await createImageBitmap(blob);
@@ -77,28 +77,28 @@ async function start(tab) {
     });
 
     const info = await ask(tab.id, { type: "FS_PREPARE" });
-    if (!info || !info.ok) throw new Error("No se pudo leer la página.");
+    if (!info || !info.ok) throw new Error("Could not read the page.");
 
     const { viewportWidth, totalHeight, totalWidth, originalScrollY } = info;
     const shots = [];
 
-    // Primer tramo desde arriba. No damos por hecho que la imagen capturada
-    // mida exactamente el viewport: la medimos y de ahí sale el paso real.
+    // First slice from the top. We do not assume the captured image matches
+    // the viewport exactly: we measure it, and the real step comes from that.
     await ask(tab.id, { type: "FS_SCROLL", y: 0 });
     await sleep(SETTLE_MS);
     const firstUrl = await captureVisible(tab.windowId);
     const { width: capW, height: capH } = await measure(firstUrl);
 
-    const scale = capW / viewportWidth;          // ratio de píxeles del monitor
-    const stepPx = Math.max(50, Math.floor(capH / scale)); // alto real capturado, en px CSS
+    const scale = capW / viewportWidth;          // the display pixel ratio
+    const stepPx = Math.max(50, Math.floor(capH / scale)); // real captured height, in CSS px
     const steps = Math.max(1, Math.ceil(totalHeight / stepPx));
 
     shots.push({ y: 0, x: 0, dataUrl: firstUrl });
     await setBadge(tab.id, `1/${steps}`);
 
     if (steps > 1) {
-      // Los headers/footers fijos se repetirían en cada tramo: los ocultamos
-      // después del primer tramo y los devolvemos al final.
+      // Fixed headers/footers would repeat in every slice: we hide them after
+      // the first one and put them back at the end.
       await ask(tab.id, { type: "FS_HIDE_FIXED" });
     }
 
@@ -125,7 +125,7 @@ async function start(tab) {
         scale,
         totalWidth,
         totalHeight,
-        title: tab.title || "captura",
+        title: tab.title || "screenshot",
         url: tab.url || "",
         createdAt: Date.now(),
       },
@@ -137,7 +137,7 @@ async function start(tab) {
     });
   } catch (err) {
     console.error("[FullShot]", err);
-    // Queda registrado para depurar desde chrome://extensions → service worker.
+    // Logged so it can be debugged from chrome://extensions → service worker.
     chrome.storage.local.set({ fs_lastError: String((err && err.stack) || err) });
     await setBadge(tab.id, "!", "#dc2626");
     try {
@@ -154,7 +154,7 @@ async function notifyBlocked(tabId) {
   setTimeout(() => setBadge(tabId, ""), 3000);
 }
 
-// Limpieza: borra capturas guardadas de más de 1 hora al arrancar.
+// Cleanup: drops stored captures older than 1 hour on startup.
 chrome.runtime.onStartup.addListener(cleanup);
 chrome.runtime.onInstalled.addListener(cleanup);
 

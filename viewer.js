@@ -1,8 +1,8 @@
-// FullShot — visor: une los tramos, muestra la vista previa y exporta.
+// FullShot — viewer: stitches the slices, shows the preview and exports.
 
-const MAX_DIM = 32000;      // límite práctico de dimensión de canvas en Chrome
-const MAX_AREA = 250e6;     // límite práctico de área
-const PDF_MAX_PT = 14400;   // 200 pulgadas: máximo de página de PDF
+const MAX_DIM = 32000;      // practical canvas dimension limit in Chrome
+const MAX_AREA = 250e6;     // practical area limit
+const PDF_MAX_PT = 14400;   // 200 inches: maximum PDF page size
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -16,24 +16,24 @@ const els = {
 };
 
 let canvas = null;
-let baseName = "captura";
+let baseName = "screenshot";
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("No se pudo leer un tramo de la captura."));
+    img.onerror = () => reject(new Error("Could not read one slice of the capture."));
     img.src = src;
   });
 }
 
 function slug(text) {
-  return (text || "captura")
+  return (text || "screenshot")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60)
-    .toLowerCase() || "captura";
+    .toLowerCase() || "screenshot";
 }
 
 function stamp() {
@@ -54,11 +54,11 @@ function fail(text) {
 
 async function build() {
   const key = new URLSearchParams(location.search).get("key");
-  if (!key) return fail("No hay captura que mostrar.");
+  if (!key) return fail("There is no capture to show.");
 
   const stored = (await chrome.storage.local.get(key))[key];
   if (!stored || !stored.shots || !stored.shots.length) {
-    return fail("La captura expiró o no se encontró. Vuelve a intentarlo.");
+    return fail("The capture expired or was not found. Try again.");
   }
   await chrome.storage.local.remove(key);
 
@@ -68,12 +68,12 @@ async function build() {
   for (const shot of stored.shots) images.push({ img: await loadImage(shot.dataUrl), y: shot.y });
 
   const first = images[0].img;
-  // Las capturas vienen escaladas por el devicePixelRatio del monitor.
+  // Captures come scaled by the display devicePixelRatio.
   const scale = first.naturalWidth / stored.viewportWidth;
 
   const rawW = first.naturalWidth;
-  // Alto real cubierto por los tramos. Si por algún motivo la página no dejó
-  // llegar hasta abajo, recortamos en vez de dejar una franja blanca.
+  // Real height covered by the slices. If for some reason the page would not
+  // let us reach the bottom, we crop instead of leaving a white band.
   const covered = Math.max(
     ...images.map(({ img, y }) => y + img.naturalHeight / scale)
   );
@@ -103,8 +103,8 @@ async function build() {
 
   if (f < 1) {
     showNote(
-      `La página es más alta de lo que un canvas de Chrome aguanta, así que se redujo al ${Math.round(f * 100)}% ` +
-      `(${canvas.width}×${canvas.height} px). El contenido está completo, solo con menos resolución.`
+      `The page is taller than a Chrome canvas can hold, so it was scaled down to ${Math.round(f * 100)}% ` +
+      `(${canvas.width}×${canvas.height} px). The content is all there, just at lower resolution.`
     );
   }
 
@@ -112,7 +112,7 @@ async function build() {
   els.preview.classList.remove("hidden");
   els.status.classList.add("hidden");
   els.meta.innerHTML =
-    `<b>${canvas.width}×${canvas.height} px</b> · ${images.length} tramos · ${stored.url.replace(/^https?:\/\//, "").slice(0, 70)}`;
+    `<b>${canvas.width}×${canvas.height} px</b> · ${images.length} slices · ${stored.url.replace(/^https?:\/\//, "").slice(0, 70)}`;
 }
 
 function toBlob(type, quality) {
@@ -146,28 +146,28 @@ els.copy.addEventListener("click", async () => {
   try {
     const blob = await toBlob("image/png");
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-    els.copy.textContent = "¡Copiado!";
+    els.copy.textContent = "Copied";
   } catch (_) {
-    els.copy.textContent = "No se pudo copiar";
+    els.copy.textContent = "Could not copy";
   }
   setTimeout(() => (els.copy.textContent = original), 1800);
 });
 
 els.pdf.addEventListener("click", async () => {
   els.pdf.disabled = true;
-  els.pdf.textContent = "Generando…";
+  els.pdf.textContent = "Generating…";
   try {
     const { jsPDF } = window.jspdf;
-    const wPt = canvas.width * 0.75;   // 1 px CSS = 0.75 pt
+    const wPt = canvas.width * 0.75;   // 1 CSS px = 0.75 pt
     const hPt = canvas.height * 0.75;
 
     if (hPt <= PDF_MAX_PT) {
-      // Una sola página larga, del tamaño exacto de la captura.
+      // A single long page, exactly the size of the capture.
       const doc = new jsPDF({ orientation: wPt > hPt ? "l" : "p", unit: "pt", format: [wPt, hPt] });
       doc.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, wPt, hPt);
       await download(doc.output("blob"), `${baseName}.pdf`);
     } else {
-      // Demasiado alta para una sola página: se corta en páginas del mismo ancho.
+      // Too tall for one page: split into pages of the same width.
       const pageHpx = Math.floor(PDF_MAX_PT / 0.75);
       const pages = Math.ceil(canvas.height / pageHpx);
       const doc = new jsPDF({ orientation: "p", unit: "pt", format: [wPt, PDF_MAX_PT] });
@@ -186,20 +186,20 @@ els.pdf.addEventListener("click", async () => {
         doc.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, wPt, sh * 0.75);
       }
       await download(doc.output("blob"), `${baseName}.pdf`);
-      showNote(`La captura no cabe en una sola página de PDF, así que se dividió en ${pages} páginas.`);
+      showNote(`The capture does not fit on a single PDF page, so it was split across ${pages} pages.`);
     }
   } catch (err) {
     console.error(err);
     els.pdf.textContent = "Error";
-    setTimeout(() => (els.pdf.textContent = "Descargar PDF"), 2000);
+    setTimeout(() => (els.pdf.textContent = "Download PDF"), 2000);
     els.pdf.disabled = false;
     return;
   }
-  els.pdf.textContent = "Descargar PDF";
+  els.pdf.textContent = "Download PDF";
   els.pdf.disabled = false;
 });
 
 build().catch((err) => {
   console.error(err);
-  fail("Algo falló al armar la captura: " + err.message);
+  fail("Something went wrong stitching the capture: " + err.message);
 });

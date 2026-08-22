@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "FullShot — Captura de página completa",
+  "name": "FullShot",
   "version": "1.0.0",
-  "description": "Captura la página completa (todo el scroll) y expórtala como PNG o PDF. Sin servidores: todo pasa en tu navegador.",
+  "description": "Capture the entire page, all the way down the scroll, and export it as PNG or PDF. No servers: everything happens in your browser.",
   "permissions": ["activeTab", "scripting", "downloads", "storage", "unlimitedStorage"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Capturar página completa (Alt+Shift+P)",
+    "default_title": "Capture full page (Alt+Shift+P)",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -28,7 +28,7 @@
         "default": "Alt+Shift+P",
         "mac": "Alt+Shift+P"
       },
-      "description": "Capturar la página completa"
+      "description": "Capture the full page"
     }
   },
   "web_accessible_resources": [

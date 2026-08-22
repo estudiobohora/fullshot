@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Genera los iconos de FullShot. Correr con: python tools/make-icons.py
+"""Generates the FullShot icons. Run with: python tools/make-icons.py
 
-El concepto: corchetes de encuadre (el lenguaje de "captura") alrededor de una
-pagina con contenido. Hay tres niveles de detalle porque un solo dibujo escalado
-a 16 px se convierte en manchas: los corchetes se ensucian y la pagina se pierde.
+The idea: framing brackets (the visual language of "capture") around a page with
+content. There are three levels of detail because scaling a single drawing down
+to 16 px turns it to mush: the brackets smudge and the page disappears.
 """
 import os
 from PIL import Image, ImageDraw
 
-# Paleta ToolTank Brand Guidelines v1.0 "A Digital Systems Studio" (12-ago-2026).
-# OJO: brand-kit/tooltank-brand.css tiene la paleta VIEJA (champan/charcoal), superseded.
-NAVY  = (13, 27, 42, 255)       # #0D1B2A  fondo primario
-PAPER = (240, 237, 232, 255)    # #F0EDE8  Warm Off-White, la pagina
-BRASS = (201, 171, 76, 255)     # #C9AB4C  Architectural Brass, el acento de firma
-LINE  = (156, 168, 178, 255)    # texto de la pagina, gris azulado sobre el off-white
+# ToolTank Brand Guidelines v1.0 "A Digital Systems Studio" palette (2026-08-12).
+# NOTE: brand-kit/tooltank-brand.css holds the OLD palette (champagne/charcoal), superseded.
+NAVY  = (13, 27, 42, 255)       # #0D1B2A  primary background
+PAPER = (240, 237, 232, 255)    # #F0EDE8  Warm Off-White, the page
+BRASS = (201, 171, 76, 255)     # #C9AB4C  Architectural Brass, the signature accent
+LINE  = (156, 168, 178, 255)    # page text, blue-grey on the off-white
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "icons")
 
@@ -26,7 +26,7 @@ def _bg(S, radius_at_512):
 
 
 def _brackets(d, S, t, L, m):
-    """Corchetes de encuadre, en brass: es el unico elemento de acento."""
+    """Framing brackets, in brass: the only accent element."""
     for cx, sx in ((m, 1), (S - m, -1)):
         for cy, sy in ((m, 1), (S - m, -1)):
             d.rounded_rectangle((min(cx, cx + sx * L), min(cy, cy + sy * t),
@@ -38,20 +38,20 @@ def _brackets(d, S, t, L, m):
 
 
 def detailed(S=512):
-    """128 y 48 px: pagina con cinco lineas y corchetes finos."""
+    """128 and 48 px: page with five lines and thin brackets."""
     img, d = _bg(S, 112)
     u = S / 512.0
     d.rounded_rectangle((150 * u, 74 * u, 362 * u, S - 74 * u), radius=int(16 * u), fill=PAPER)
     for i in range(5):
         y = (116 + i * 60) * u
-        w = 338 if i % 3 != 2 else 292          # una linea corta, como parrafo que termina
+        w = 338 if i % 3 != 2 else 292          # one short line, like a paragraph ending
         d.rounded_rectangle((174 * u, y, w * u, y + 20 * u), radius=int(10 * u), fill=LINE)
     _brackets(d, S, 30 * u, 96 * u, 46 * u)
     return img
 
 
 def medium(S=256):
-    """32 px: corchetes mas gruesos y solo tres lineas."""
+    """32 px: thicker brackets and only three lines."""
     img, d = _bg(S, 56)
     u = S / 256.0
     d.rounded_rectangle((84 * u, 34 * u, 172 * u, S - 34 * u), radius=int(9 * u), fill=PAPER)
@@ -63,15 +63,15 @@ def medium(S=256):
 
 
 def tiny(S=256):
-    """16 px: sin corchetes. A ese tamano se vuelven manchas grises en las
-    esquinas y ensucian todo, asi que la pagina crece y ocupa el espacio."""
+    """16 px: no brackets. At that size they turn into grey smudges in the
+    corners and dirty the whole thing, so the page grows to fill the space."""
     img, d = _bg(S, 56)
     u = S / 256.0
     d.rounded_rectangle((68 * u, 20 * u, 188 * u, S - 20 * u), radius=int(12 * u), fill=PAPER)
     for i in range(4):
         y = (52 + i * 46) * u
         w = 166 if i % 2 == 0 else 142
-        col = BRASS if i == 0 else LINE      # sin corchetes, el acento entra por aqui
+        col = BRASS if i == 0 else LINE      # with no brackets, the accent comes in here
         d.rounded_rectangle((88 * u, y, w * u, y + 20 * u), radius=int(10 * u), fill=col)
     return img
 

@@ -1,35 +1,57 @@
 # CLAUDE.md — FullShot
 
-Extensión Chrome MV3 que captura la página completa (todo el scroll) y exporta PNG/PDF.
-Reemplazo de GoFullPage, que Google sacó de la Web Store en agosto 2026.
+Chrome MV3 extension that captures the full page, all the way down the scroll,
+and exports PNG/PDF. A replacement for GoFullPage, which Google pulled from the
+Web Store in August 2026.
 
-## Arquitectura
+## Architecture
 
-- `background.js` — service worker. Orquesta: inyecta `page.js`, mide el primer tramo
-  para calcular el paso real de scroll, captura tramo por tramo con `chrome.tabs.captureVisibleTab()`,
-  guarda todo en `chrome.storage.local` y abre `viewer.html`.
-- `page.js` — content script inyectado bajo demanda. Controla scroll, esconde scrollbars,
-  desactiva scroll suave, dispara lazy-load y oculta elementos `fixed`/`sticky`.
-- `viewer.js` — pega los tramos en un canvas, muestra vista previa, exporta PNG/PDF (jsPDF).
+- `background.js` — service worker. Orchestrates: injects `page.js`, measures the
+  first slice to work out the real scroll step, captures slice by slice with
+  `chrome.tabs.captureVisibleTab()`, stores everything in `chrome.storage.local`
+  and opens `viewer.html`.
+- `page.js` — content script injected on demand. Controls scrolling, hides
+  scrollbars, disables smooth scrolling, triggers lazy-loading and hides
+  `fixed`/`sticky` elements.
+- `viewer.js` — stitches the slices onto a canvas, shows the preview, exports
+  PNG/PDF (jsPDF).
+- `tools/make-icons.py` — generates the four icon sizes. The icons are drawn by
+  code, not by hand, so they can be adjusted instead of being opaque binaries.
 
-## Invariantes que NO se pueden romper
+## Invariants that must NOT be broken
 
-1. Throttle de 600 ms entre capturas. Chrome limita `captureVisibleTab` a ~2 llamadas/seg.
-2. El paso de scroll sale del ALTO REAL de la imagen capturada, no de `window.innerHeight`.
-   Asumir que son iguales deja franjas blancas.
-3. Los elementos `fixed`/`sticky` se ocultan DESPUÉS del primer tramo y se restauran siempre,
-   incluso si la captura falla.
-4. `activeTab` únicamente. Nunca agregar `host_permissions` amplios.
-5. Sin scripts remotos: la CSP de MV3 los bloquea. Todo vendorizado en `lib/`.
+1. 600 ms throttle between captures. Chrome caps `captureVisibleTab` at roughly
+   2 calls per second.
+2. The scroll step comes from the REAL HEIGHT of the captured image, not from
+   `window.innerHeight`. Assuming they are equal leaves white bands.
+3. `fixed`/`sticky` elements are hidden AFTER the first slice and always
+   restored, even if the capture fails.
+4. `activeTab` only. Never add broad `host_permissions`.
+5. No remote scripts: the MV3 CSP blocks them. Everything is vendored in `lib/`.
+   This also rules out remote web fonts.
 
-## Probar
+## Design
 
-Cargar descomprimida en `chrome://extensions` con Modo desarrollador.
-Después de editar, click en recargar (⟳) en la tarjeta de la extensión.
-Errores del service worker: `chrome://extensions` → "service worker" → Console.
-El último error también queda en `chrome.storage.local.fs_lastError`.
+Colors follow the ToolTank palette: Navy `#0D1B2A`, ToolTank Black `#1C1F2A`,
+Warm Off-White `#F0EDE8`, Architectural Brass `#C9AB4C` for the accent, and
+Muted Aqua `#5F9F9A` for informational notices only. Text sitting on brass is
+navy, never white: brass is light and white on top does not clear contrast.
 
-## Pendientes conocidos
+## Testing
 
-- Páginas que scrollean dentro de un contenedor interno (no el body) no se capturan completas.
-- No funciona en `chrome://`, `chrome-extension://` ni Chrome Web Store (restricción de Chrome).
+Load unpacked at `chrome://extensions` with Developer mode on.
+After editing, click reload (⟳) on the extension card.
+Service worker errors: `chrome://extensions` → "service worker" → Console.
+The last error is also kept in `chrome.storage.local.fs_lastError`.
+
+## Known gaps
+
+- Pages that scroll inside an inner container rather than the body are not
+  captured in full.
+- Does not work on `chrome://`, `chrome-extension://` or the Chrome Web Store
+  (Chrome restriction).
+
+## Language
+
+The project ships in English. Commit messages before August 2026 are in Spanish;
+they are left as they are rather than rewriting published history.

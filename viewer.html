@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>FullShot — Vista previa</title>
+<title>FullShot — Preview</title>
 <style>
   :root {
     /* ToolTank Brand Guidelines v1.0 "A Digital Systems Studio" */
@@ -14,7 +14,7 @@
     --muted: #8B98A5;
     --accent: #C9AB4C;        /* Architectural Brass */
     --accent-hover: #D8BC65;
-    --info: #5F9F9A;          /* Muted Aqua, solo para avisos */
+    --info: #5F9F9A;          /* Muted Aqua, notices only */
   }
   * { box-sizing: border-box; }
   body {
@@ -49,7 +49,7 @@
     cursor: pointer;
   }
   button:hover { background: #2A3442; }
-  /* El brass es claro: el texto encima va en navy, no en blanco. */
+  /* Brass is light: text on top goes navy, not white. */
   button.primary { background: var(--accent); border-color: var(--accent); color: #0D1B2A; }
   button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
   button:disabled { opacity: .5; cursor: default; }
@@ -84,16 +84,16 @@
 <body>
   <header>
     <span class="brand">FullShot</span>
-    <span class="meta" id="meta">Armando la captura…</span>
-    <button id="copy">Copiar</button>
-    <button id="pdf">Descargar PDF</button>
-    <button id="png" class="primary">Descargar PNG</button>
+    <span class="meta" id="meta">Building the capture…</span>
+    <button id="copy">Copy</button>
+    <button id="pdf">Download PDF</button>
+    <button id="png" class="primary">Download PNG</button>
   </header>
   <div id="note" class="note hidden"></div>
   <main>
     <div id="shell">
-      <div id="status">Uniendo los tramos…</div>
-      <img id="preview" class="hidden" alt="Vista previa de la captura">
+      <div id="status">Stitching the slices…</div>
+      <img id="preview" class="hidden" alt="Preview of the capture">
     </div>
   </main>
   <script src="lib/jspdf.umd.min.js"></script>

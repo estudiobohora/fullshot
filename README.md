@@ -1,59 +1,69 @@
-# FullShot — captura de página completa
+# FullShot
 
-Reemplazo casero de GoFullPage. Captura toda la página (todo el scroll) y la exporta en PNG o PDF. Todo pasa dentro de tu navegador: no sube nada a ningún servidor.
+A homemade replacement for GoFullPage. Captures the entire page, all the way down the scroll, and exports it as PNG or PDF. Everything happens inside your browser: nothing is uploaded anywhere.
 
-## Instalar (2 minutos)
+## Install (2 minutes)
 
-1. Descomprime la carpeta `fullshot` donde la vayas a dejar permanentemente (si la borras o la mueves, la extensión se desactiva).
-2. Abre `chrome://extensions`.
-3. Activa **Modo de desarrollador** (arriba a la derecha).
-4. Click en **Cargar descomprimida** y selecciona la carpeta `fullshot`.
-5. Fija el ícono a la barra con el pin de extensiones.
+1. Unzip the `fullshot` folder wherever you plan to keep it. If you delete or move it, the extension stops working.
+2. Open `chrome://extensions`.
+3. Turn on **Developer mode**, top right.
+4. Click **Load unpacked** and pick the `fullshot` folder.
+5. Pin the icon to the toolbar.
 
-## Usar
+## Use
 
-Click en el ícono, o `Alt+Shift+P`. El badge muestra el progreso (`3/7`). Al terminar se abre una pestaña con la vista previa y tres botones: **Copiar**, **Descargar PDF**, **Descargar PNG**.
+Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and three buttons: **Copy**, **Download PDF**, **Download PNG**.
 
-Para cambiar el atajo: `chrome://extensions/shortcuts`.
+To change the shortcut: `chrome://extensions/shortcuts`.
 
-## Cómo funciona
+## How it works
 
-Chrome no deja capturar fuera de la pantalla, así que la extensión hace lo mismo que hacía GoFullPage:
+Chrome will not let an extension capture anything outside the visible viewport, so FullShot does what GoFullPage did:
 
-1. Inyecta un script en la página, esconde las barras de scroll y desactiva el scroll suave.
-2. Recorre la página completa una vez para disparar las imágenes lazy-load.
-3. Hace scroll tramo por tramo y llama a `chrome.tabs.captureVisibleTab()` en cada parada (throttle de 600 ms porque Chrome limita a ~2 capturas por segundo).
-4. Después del primer tramo esconde los elementos `position: fixed` y `sticky`, para que el header no se repita en cada pantalla.
-5. Guarda los tramos, los pega en un `<canvas>` y devuelve la página a como estaba.
+1. Injects a script into the page, hides the scrollbars and turns off smooth scrolling.
+2. Scrolls through the whole page once to trigger lazy-loaded images.
+3. Scrolls one viewport at a time and calls `chrome.tabs.captureVisibleTab()` at each stop, throttled to 600 ms because Chrome caps this at roughly two captures per second.
+4. Hides `position: fixed` and `sticky` elements after the first slice, so the header does not repeat down the whole screenshot.
+5. Stores the slices, stitches them onto a `<canvas>`, and puts the page back the way it was.
 
-## Límites conocidos
+## Known limits
 
-- No funciona en `chrome://`, `chrome-extension://` ni en la Chrome Web Store. Es una restricción de Chrome, no un bug.
-- Páginas que hacen scroll dentro de un contenedor interno (no en el `body`) no se capturan completas.
-- Un canvas de Chrome tope alrededor de 250 megapíxeles. En páginas gigantes la captura se reduce automáticamente y te avisa en la vista previa.
-- El PDF sale en una sola página larga; si pasa de 200 pulgadas de alto, se divide en varias.
+- Does not work on `chrome://`, `chrome-extension://` or the Chrome Web Store. That is a Chrome restriction, not a bug.
+- Pages that scroll inside an inner container instead of the document body are not captured in full.
+- A Chrome canvas tops out around 250 megapixels. On very tall pages the capture is scaled down automatically and the preview tells you so.
+- The PDF comes out as a single long page. Past 200 inches tall it is split across several.
 
-## Permisos y por qué
+## Permissions, and why
 
-- `activeTab` — solo la pestaña donde tú hiciste click. No hay acceso permanente a ningún sitio.
-- `scripting` — inyectar el script de scroll bajo demanda.
-- `downloads` — guardar el PNG/PDF.
-- `storage` + `unlimitedStorage` — guardar los tramos entre la captura y la vista previa. Se borran al abrir el visor.
+- `activeTab`: only the tab you clicked on. No standing access to any site.
+- `scripting`: to inject the scrolling script on demand.
+- `downloads`: to save the PNG or PDF.
+- `storage` + `unlimitedStorage`: to hold the slices between capture and preview. They are deleted as soon as the viewer opens.
 
-## Archivos
+## Files
 
 ```
-manifest.json   configuración MV3
-background.js   orquesta scroll + captura
-page.js         script inyectado en la página
-viewer.html/js  vista previa y exportación
-lib/            jsPDF 2.5.2 (MIT)
+manifest.json      MV3 configuration
+background.js      orchestrates scrolling and capture
+page.js            script injected into the page
+viewer.html/js     preview and export
+lib/               jsPDF 2.5.2 (MIT)
 icons/
+tools/             icon generator
 ```
 
-## Licencia
+## Icons
 
-FullShot se publica bajo licencia MIT, en el archivo `LICENSE`.
+The icons are generated, not hand-drawn. To change the color, weight or shape, edit `tools/make-icons.py` and run it:
 
-Incluye jsPDF 2.5.2, también MIT. Su aviso de copyright viaja dentro de
-`lib/jspdf.umd.min.js`, así que redistribuir esta carpeta cumple con su licencia.
+```
+python tools/make-icons.py
+```
+
+It writes all four sizes. There are three levels of detail on purpose: scaling a single drawing down to 16 px turns the framing brackets into grey smudges, so that size is drawn without them.
+
+## License
+
+FullShot is released under the MIT license, in the `LICENSE` file.
+
+It bundles jsPDF 2.5.2, also MIT. Its copyright notice travels inside `lib/jspdf.umd.min.js`, so redistributing this folder satisfies its license.
