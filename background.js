@@ -15,10 +15,16 @@ let busy = false;
 chrome.action.onClicked.addListener((tab) => start(tab));
 
 chrome.commands.onCommand.addListener(async (command) => {
-  if (command !== "capture-full-page") return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) start(tab);
+  if (!tab) return;
+  if (command === "capture-full-page") start(tab);
+  else if (command === "capture-region") startRegion(tab);
 });
+
+function isBlocked(url) {
+  return /^(chrome|edge|about|devtools|chrome-extension):/i.test(url) ||
+         url.startsWith("https://chromewebstore.google.com");
+}
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -67,9 +73,7 @@ async function start(tab) {
   if (busy) return;
   if (!tab || !tab.id) return;
 
-  const url = tab.url || "";
-  if (/^(chrome|edge|about|devtools|chrome-extension):/i.test(url) ||
-      url.startsWith("https://chromewebstore.google.com")) {
+  if (isBlocked(tab.url || "")) {
     await notifyBlocked(tab.id);
     return;
   }
@@ -163,6 +167,64 @@ async function start(tab) {
     try {
       await ask(tab.id, { type: "FS_RESTORE" });
     } catch (_) {}
+    setTimeout(() => setBadge(tab.id, ""), 4000);
+  } finally {
+    busy = false;
+  }
+}
+
+// Región visible: una sola captura y un recorte. Sin recorrer la página, porque
+// lo que se selecciona ya está en pantalla. Es el complemento rápido a la
+// captura completa, no un sustituto.
+async function startRegion(tab) {
+  if (busy) return;
+  if (!tab || !tab.id) return;
+  if (isBlocked(tab.url || "")) { await notifyBlocked(tab.id); return; }
+
+  busy = true;
+  try {
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["page.js"] });
+
+    const pick = await ask(tab.id, { type: "FS_PICK_REGION" });
+    if (!pick || !pick.ok) return;                 // cancelado con Esc
+
+    const dataUrl = await captureVisible(tab.windowId);
+    const { width: capW } = await measure(dataUrl);
+
+    // La captura viene en píxeles del monitor; la selección, en píxeles CSS.
+    const scale = capW / (pick.viewportWidth || tab.width || capW);
+    const r = pick.rect;
+
+    const key = `fs_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+    await chrome.storage.local.set({
+      [key]: {
+        shots: [{ y: 0, x: 0, dataUrl }],
+        region: {
+          x: Math.round(r.x * scale),
+          y: Math.round(r.y * scale),
+          width: Math.round(r.width * scale),
+          height: Math.round(r.height * scale),
+        },
+        viewportWidth: pick.viewportWidth,
+        stepPx: r.height,
+        scale,
+        totalWidth: r.width,
+        totalHeight: r.height,
+        title: tab.title || "screenshot",
+        url: tab.url || "",
+        sourceTabId: tab.id,
+        createdAt: Date.now(),
+      },
+    });
+
+    await chrome.tabs.create({
+      url: chrome.runtime.getURL(`viewer.html?key=${encodeURIComponent(key)}`),
+      index: tab.index + 1,
+    });
+  } catch (err) {
+    console.error("[FullShot]", err);
+    chrome.storage.local.set({ fs_lastError: String((err && err.stack) || err) });
+    await setBadge(tab.id, "!", "#dc2626");
     setTimeout(() => setBadge(tab.id, ""), 4000);
   } finally {
     busy = false;

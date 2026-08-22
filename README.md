@@ -14,7 +14,12 @@ A homemade replacement for GoFullPage. Captures the entire page, all the way dow
 
 Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. Name the capture in the box next to the logo, or leave it empty for an automatic name.
 
-**Crop** lets you keep just part of the capture. Click the crop icon, drag a rectangle over the preview, and everything outside it is cut. Esc cancels, and Undo crop brings the full capture back. The crop happens after the capture, so you see the whole page before deciding what to keep.
+There are two ways to capture:
+
+- **Full page**, the icon or `Alt+Shift+P`. Scrolls the whole page and stitches it.
+- **Selected area**, `Alt+Shift+S`. Drag over what you want on the page itself. No scrolling, no stitching: what you select is already on screen, so it is one capture and a cut. Esc cancels.
+
+**Crop** lets you keep just part of a full-page capture. Click the crop icon, drag a rectangle over the preview, and everything outside it is cut. Esc cancels, and Undo crop brings the full capture back. The crop happens after the capture, so you see the whole page before deciding what to keep.
 
 **Capture again** re-runs the capture on the same page without leaving the viewer. It works as long as that tab is still open on the same page.
 

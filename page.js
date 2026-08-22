@@ -119,6 +119,65 @@
     await sleep(150);
   }
 
+  // Selección de una región visible. No mueve el scroll: lo que se ve es lo que
+  // hay, así que basta una captura y un recorte. Ese es el caso común de un
+  // recorte, y recorrer la página entera para quedarse con un botón no tiene
+  // sentido.
+  function pickRegion() {
+    return new Promise((resolve) => {
+      const box = document.createElement("div");
+      box.style.cssText =
+        "position:fixed;inset:0;z-index:2147483647;cursor:crosshair;" +
+        "background:rgba(13,27,42,.35)";
+      const rect = document.createElement("div");
+      rect.style.cssText =
+        "position:fixed;border:2px solid #C9AB4C;box-shadow:0 0 0 9999px rgba(13,27,42,.45);" +
+        "display:none;pointer-events:none";
+      const tip = document.createElement("div");
+      tip.textContent = "Arrastra sobre el área. Esc para cancelar.";
+      tip.style.cssText =
+        "position:fixed;top:18px;left:50%;transform:translateX(-50%);" +
+        "background:#1C1F2A;color:#F0EDE8;border:1px solid #2A3442;border-radius:8px;" +
+        "padding:9px 15px;font:14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" +
+        "pointer-events:none";
+      const layer = document.createElement("div");
+      layer.appendChild(box);
+      layer.appendChild(rect);
+      layer.appendChild(tip);
+      document.documentElement.appendChild(layer);
+
+      let start = null;
+      const at = (e) => ({ x: e.clientX, y: e.clientY });
+      const paint = (a, b) => {
+        const l = Math.min(a.x, b.x), t = Math.min(a.y, b.y);
+        const w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
+        Object.assign(rect.style, { display: "block", left: l + "px", top: t + "px",
+                                    width: w + "px", height: h + "px" });
+        return { x: l, y: t, width: w, height: h };
+      };
+
+      let current = null;
+      const done = (value) => {
+        window.removeEventListener("keydown", onKey, true);
+        layer.remove();
+        resolve(value);
+      };
+      const onKey = (e) => {
+        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(null); }
+      };
+
+      box.addEventListener("mousedown", (e) => { e.preventDefault(); start = at(e); });
+      box.addEventListener("mousemove", (e) => { if (start) current = paint(start, at(e)); });
+      box.addEventListener("mouseup", (e) => {
+        if (!start) return;
+        const r = paint(start, at(e));
+        // Un clic suelto no es una selección.
+        done(r.width < 8 || r.height < 8 ? null : r);
+      });
+      window.addEventListener("keydown", onKey, true);
+    });
+  }
+
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     (async () => {
       switch (msg.type) {
@@ -146,6 +205,20 @@
             scrollX: window.scrollX,
             scrollY: window.scrollY,
             totalHeight: docHeight(),
+          });
+          break;
+        }
+        case "FS_PICK_REGION": {
+          injectStyle();                       // hides scrollbars while selecting
+          const r = await pickRegion();
+          removeStyle();
+          // Un frame para que la capa desaparezca antes de que se capture.
+          await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+          sendResponse({
+            ok: !!r,
+            rect: r,
+            viewportWidth: window.innerWidth,     // to map CSS px to captured px
+            devicePixelRatio: window.devicePixelRatio || 1,
           });
           break;
         }

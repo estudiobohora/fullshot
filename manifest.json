@@ -35,6 +35,13 @@
         "mac": "Alt+Shift+P"
       },
       "description": "Capture the full page"
+    },
+    "capture-region": {
+      "suggested_key": {
+        "default": "Alt+Shift+S",
+        "mac": "Alt+Shift+S"
+      },
+      "description": "Capture a selected area"
     }
   }
 }

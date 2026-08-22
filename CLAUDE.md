@@ -45,6 +45,21 @@ Web Store in August 2026.
    count. A step cap gives up on tall pages, which is precisely where lazy
    loading leaves white gaps.
 
+## Two capture modes
+
+`capture-full-page` scrolls and stitches. `capture-region` (`Alt+Shift+S`) draws
+an overlay on the page, takes the selected rectangle, and captures once without
+touching the scroll position.
+
+Region mode exists because cropping after a full capture makes you wait for the
+whole scroll pass just to keep a button. What a person usually wants to clip is
+already on screen. The overlay is removed and two animation frames are awaited
+before capturing, or the overlay itself lands in the shot.
+
+The selection arrives in CSS pixels and the capture comes back in display
+pixels, so the rectangle is multiplied by `capturedWidth / viewportWidth` before
+it is stored. The viewer applies `stored.region` when building.
+
 ## Crop
 
 Cropping happens in the viewer, after the capture, not by selecting on the page
