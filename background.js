@@ -4,6 +4,9 @@
 
 const CAPTURE_INTERVAL_MS = 600; // captureVisibleTab is capped at ~2 calls/sec
 const SETTLE_MS = 180; // wait after scrolling so the page repaints
+// Hard ceiling on slices. At 600 ms each this is about two minutes, and it is
+// the backstop for pages that keep growing as you scroll them.
+const MAX_STEPS = 200;
 
 let busy = false;
 
@@ -91,7 +94,13 @@ async function start(tab) {
 
     const scale = capW / viewportWidth;          // the display pixel ratio
     const stepPx = Math.max(50, Math.floor(capH / scale)); // real captured height, in CSS px
-    const steps = Math.max(1, Math.ceil(totalHeight / stepPx));
+
+    // The page can grow while we capture it: lazy content that only loads once
+    // you get near it makes the document taller mid-run. Measuring the height
+    // once, up front, meant cutting the capture short and never noticing.
+    // FS_SCROLL reports the current height on every hop, so we track it.
+    let docHeight = totalHeight;
+    let steps = Math.min(MAX_STEPS, Math.max(1, Math.ceil(docHeight / stepPx)));
 
     shots.push({ y: 0, x: 0, dataUrl: firstUrl });
     await setBadge(tab.id, `1/${steps}`);
@@ -104,12 +113,17 @@ async function start(tab) {
 
     for (let i = 1; i < steps; i++) {
       await sleep(CAPTURE_INTERVAL_MS);
-      const targetY = Math.min(i * stepPx, Math.max(0, totalHeight - stepPx));
+      const targetY = Math.min(i * stepPx, Math.max(0, docHeight - stepPx));
       const pos = await ask(tab.id, { type: "FS_SCROLL", y: targetY });
       await sleep(SETTLE_MS);
 
       const dataUrl = await captureVisible(tab.windowId);
       shots.push({ y: pos.scrollY, x: pos.scrollX, dataUrl });
+
+      if (pos.totalHeight > docHeight) {
+        docHeight = pos.totalHeight;
+        steps = Math.min(MAX_STEPS, Math.ceil(docHeight / stepPx));
+      }
       await setBadge(tab.id, `${i + 1}/${steps}`);
     }
 
@@ -124,7 +138,7 @@ async function start(tab) {
         stepPx,
         scale,
         totalWidth,
-        totalHeight,
+        totalHeight: docHeight,   // the final height, or the viewer would crop
         title: tab.title || "screenshot",
         url: tab.url || "",
         createdAt: Date.now(),

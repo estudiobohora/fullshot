@@ -29,6 +29,12 @@ Web Store in August 2026.
 4. `activeTab` only. Never add broad `host_permissions`.
 5. No remote scripts: the MV3 CSP blocks them. Everything is vendored in `lib/`.
    This also rules out remote web fonts.
+6. The document height is re-read on every scroll hop, never measured once up
+   front. Lazy content makes pages grow mid-capture; freezing the height cuts
+   the capture short silently. `MAX_STEPS` is the backstop for infinite scroll.
+7. The lazy-load warm-up is bounded by time and growth ratio, not by a step
+   count. A step cap gives up on tall pages, which is precisely where lazy
+   loading leaves white gaps.
 
 ## Design
 

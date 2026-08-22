@@ -89,17 +89,29 @@
   }
 
   // Walks the page once to trigger lazy-loaded images before measuring.
+  //
+  // The budget is time and growth, not a step count. A fixed cap of 60 viewports
+  // gave up around 54,000 px, which is exactly where lazy loading hurts most:
+  // the images below never fired and the capture came out with white gaps.
+  // Two guards replace it, both aimed at infinite scroll rather than long pages:
+  // a wall-clock budget, and a growth ratio that says "this page is not going
+  // to end".
+  const WARM_BUDGET_MS = 12000;
+  const WARM_MAX_GROWTH = 5;
+
   async function warmLazyContent() {
     const vh = window.innerHeight;
-    let h = docHeight();
+    const startedAt = Date.now();
+    const initialHeight = Math.max(1, docHeight());
+    let h = initialHeight;
     let y = 0;
-    let guard = 0;
-    while (y < h && guard < 60) {
+    while (y < h) {
+      if (Date.now() - startedAt > WARM_BUDGET_MS) break;
+      if (h > initialHeight * WARM_MAX_GROWTH) break;   // infinite scroll
       window.scrollTo(0, y);
       await sleep(60);
       y += vh;
       h = docHeight();
-      guard++;
     }
     window.scrollTo(0, h);
     await sleep(150);
