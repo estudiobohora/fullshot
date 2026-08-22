@@ -20,9 +20,8 @@ To change the shortcut: `chrome://extensions/shortcuts`.
 
 ## Settings
 
-Everything lives in the viewer. The file name sits in the toolbar and is editable per capture; the gear opens the rest.
+Everything lives in the viewer. The file name sits in the toolbar, already filled in from the page title and the date, and you can rewrite it before downloading. The gear opens the rest.
 
-- **Default file name**: the template used for the next capture, with `{title}`, `{domain}`, `{date}` and `{time}` tokens. Editing the name in the toolbar only affects the capture in front of you.
 - **JPEG quality**: also applies to the image embedded in the PDF. Below roughly 80% text starts to smear.
 - **Hide fixed and sticky elements**: on by default so headers do not repeat. It applies to the *next* capture, so turn it off and press Capture again when a page keeps real content in a sticky panel.
 

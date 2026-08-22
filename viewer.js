@@ -19,7 +19,7 @@ const els = {
   settingsPanel: $("settings"),
   name: $("name"),
   ext: $("ext"),
-  template: $("template"),
+  namehint: $("namehint"),
   quality: $("quality"),
   qval: $("qval"),
   hideFixed: $("hideFixed"),
@@ -138,9 +138,8 @@ function refreshBaseName() {
   els.name.value = baseName;
 }
 
-// What actually gets downloaded: whatever is in the box, cleaned up. Typing a
-// name here only affects this capture; the template in settings is the default
-// for the next one.
+// What actually gets downloaded: whatever is in the box, cleaned up. The box
+// starts from the default pattern and editing it only affects this capture.
 function currentName() {
   const typed = els.name.value.trim();
   return typed ? fsBuildFilename(typed, source || {}) : baseName;
@@ -174,7 +173,6 @@ async function download(blob, filename) {
 // capture it applied to.
 
 function fillSettingsPanel() {
-  els.template.value = settings.filename;
   els.quality.value = settings.jpegQuality;
   els.hideFixed.checked = settings.hideFixed;
   els.qval.textContent = `${Math.round(settings.jpegQuality * 100)}%`;
@@ -189,15 +187,13 @@ async function saveSettings(patch) {
   }
 }
 
+// The advice shows up while the name is being edited, not permanently.
+els.name.addEventListener("focus", () => els.namehint.classList.remove("hidden"));
+els.name.addEventListener("blur", () => els.namehint.classList.add("hidden"));
+
 els.gear.addEventListener("click", () => {
   const hidden = els.settingsPanel.classList.toggle("hidden");
   els.gear.classList.toggle("open", !hidden);
-});
-
-els.template.addEventListener("change", async () => {
-  await saveSettings({ filename: els.template.value });
-  els.template.value = settings.filename;
-  refreshBaseName();                 // the box follows the new template
 });
 
 els.quality.addEventListener("input", () => {

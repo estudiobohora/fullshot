@@ -40,6 +40,7 @@
   .brand { font-weight: 700; letter-spacing: -0.01em; }
   .meta { color: var(--muted); font-size: 12px; padding: 0 20px 11px; }
   .meta b { color: var(--text); font-weight: 600; }
+  .namehint { color: var(--info); font-size: 12px; padding: 0 20px 11px; margin-top: -11px; }
 
   /* The file name sits in the bar because it belongs to this capture, not to
      a global preference. The extension is shown but not editable. */
@@ -97,7 +98,7 @@
     padding: 16px 20px 18px;
     display: grid;
     gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 380px));
   }
   #settings label { display: block; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
   #settings .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
@@ -109,7 +110,6 @@
   #settings input[type="range"] { flex: 1; accent-color: var(--accent); }
   #settings input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
   #settings .check { display: flex; align-items: center; gap: 9px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); font-size: 14px; }
-  code { background: #223041; border-radius: 5px; padding: 1px 5px; font-size: 12px; color: var(--accent); }
   .qval { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
 
   main { padding: 24px; display: flex; justify-content: center; }
@@ -154,12 +154,8 @@
       <button id="gear" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
     <div class="meta" id="meta">Building the capture…</div>
+    <div class="namehint hidden" id="namehint">Name it so it doesn't get lost as a generic file, and stays easy to search later.</div>
     <div id="settings" class="hidden">
-      <div>
-        <label for="template">Default file name</label>
-        <input id="template" type="text" spellcheck="false">
-        <p class="hint">Used for the next capture. Tokens: <code>{title}</code> <code>{domain}</code> <code>{date}</code> <code>{time}</code></p>
-      </div>
       <div>
         <label for="quality">JPEG quality</label>
         <div class="sliderrow">
