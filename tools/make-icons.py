@@ -8,9 +8,12 @@ a 16 px se convierte en manchas: los corchetes se ensucian y la pagina se pierde
 import os
 from PIL import Image, ImageDraw
 
-BLUE  = (37, 99, 235, 255)      # #2563eb, el mismo accent del visor
-WHITE = (255, 255, 255, 255)
-LINE  = (167, 195, 248, 255)    # el "texto" de la pagina
+# Paleta ToolTank Brand Guidelines v1.0 "A Digital Systems Studio" (12-ago-2026).
+# OJO: brand-kit/tooltank-brand.css tiene la paleta VIEJA (champan/charcoal), superseded.
+NAVY  = (13, 27, 42, 255)       # #0D1B2A  fondo primario
+PAPER = (240, 237, 232, 255)    # #F0EDE8  Warm Off-White, la pagina
+BRASS = (201, 171, 76, 255)     # #C9AB4C  Architectural Brass, el acento de firma
+LINE  = (156, 168, 178, 255)    # texto de la pagina, gris azulado sobre el off-white
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "icons")
 
@@ -18,27 +21,27 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "icons")
 def _bg(S, radius_at_512):
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle((0, 0, S - 1, S - 1), radius=int(radius_at_512 * S / 512.0), fill=BLUE)
+    d.rounded_rectangle((0, 0, S - 1, S - 1), radius=int(radius_at_512 * S / 512.0), fill=NAVY)
     return img, d
 
 
 def _brackets(d, S, t, L, m):
-    """Corchetes en las cuatro esquinas. t = grosor, L = largo, m = margen."""
+    """Corchetes de encuadre, en brass: es el unico elemento de acento."""
     for cx, sx in ((m, 1), (S - m, -1)):
         for cy, sy in ((m, 1), (S - m, -1)):
             d.rounded_rectangle((min(cx, cx + sx * L), min(cy, cy + sy * t),
                                  max(cx, cx + sx * L), max(cy, cy + sy * t)),
-                                radius=t / 2, fill=WHITE)
+                                radius=t / 2, fill=BRASS)
             d.rounded_rectangle((min(cx, cx + sx * t), min(cy, cy + sy * L),
                                  max(cx, cx + sx * t), max(cy, cy + sy * L)),
-                                radius=t / 2, fill=WHITE)
+                                radius=t / 2, fill=BRASS)
 
 
 def detailed(S=512):
     """128 y 48 px: pagina con cinco lineas y corchetes finos."""
     img, d = _bg(S, 112)
     u = S / 512.0
-    d.rounded_rectangle((150 * u, 74 * u, 362 * u, S - 74 * u), radius=int(16 * u), fill=WHITE)
+    d.rounded_rectangle((150 * u, 74 * u, 362 * u, S - 74 * u), radius=int(16 * u), fill=PAPER)
     for i in range(5):
         y = (116 + i * 60) * u
         w = 338 if i % 3 != 2 else 292          # una linea corta, como parrafo que termina
@@ -51,7 +54,7 @@ def medium(S=256):
     """32 px: corchetes mas gruesos y solo tres lineas."""
     img, d = _bg(S, 56)
     u = S / 256.0
-    d.rounded_rectangle((84 * u, 34 * u, 172 * u, S - 34 * u), radius=int(9 * u), fill=WHITE)
+    d.rounded_rectangle((84 * u, 34 * u, 172 * u, S - 34 * u), radius=int(9 * u), fill=PAPER)
     for i in range(3):
         y = (62 + i * 46) * u
         d.rounded_rectangle((98 * u, y, 158 * u, y + 14 * u), radius=int(7 * u), fill=LINE)
@@ -64,11 +67,12 @@ def tiny(S=256):
     esquinas y ensucian todo, asi que la pagina crece y ocupa el espacio."""
     img, d = _bg(S, 56)
     u = S / 256.0
-    d.rounded_rectangle((68 * u, 20 * u, 188 * u, S - 20 * u), radius=int(12 * u), fill=WHITE)
+    d.rounded_rectangle((68 * u, 20 * u, 188 * u, S - 20 * u), radius=int(12 * u), fill=PAPER)
     for i in range(4):
         y = (52 + i * 46) * u
         w = 166 if i % 2 == 0 else 142
-        d.rounded_rectangle((88 * u, y, w * u, y + 20 * u), radius=int(10 * u), fill=LINE)
+        col = BRASS if i == 0 else LINE      # sin corchetes, el acento entra por aqui
+        d.rounded_rectangle((88 * u, y, w * u, y + 20 * u), radius=int(10 * u), fill=col)
     return img
 
 
