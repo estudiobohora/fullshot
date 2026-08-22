@@ -2,6 +2,8 @@
 // Orchestrates: injects the content script, scrolls and captures slice by slice,
 // stores the slices and opens the viewer to stitch the final image.
 
+importScripts("settings.js");
+
 const CAPTURE_INTERVAL_MS = 600; // captureVisibleTab is capped at ~2 calls/sec
 const SETTLE_MS = 180; // wait after scrolling so the page repaints
 // Hard ceiling on slices. At 600 ms each this is about two minutes, and it is
@@ -74,6 +76,8 @@ async function start(tab) {
 
   busy = true;
   try {
+    const settings = await fsGetSettings();
+
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ["page.js"],
@@ -105,9 +109,10 @@ async function start(tab) {
     shots.push({ y: 0, x: 0, dataUrl: firstUrl });
     await setBadge(tab.id, `1/${steps}`);
 
-    if (steps > 1) {
+    if (steps > 1 && settings.hideFixed) {
       // Fixed headers/footers would repeat in every slice: we hide them after
-      // the first one and put them back at the end.
+      // the first one and put them back at the end. Some pages keep real
+      // content in a sticky panel, which is why this can be turned off.
       await ask(tab.id, { type: "FS_HIDE_FIXED" });
     }
 

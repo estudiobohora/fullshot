@@ -36,6 +36,8 @@
     border-bottom: 1px solid var(--border);
   }
   .brand { font-weight: 700; letter-spacing: -0.01em; margin-right: 4px; }
+  #opts { padding: 8px 12px; color: var(--muted); }
+  #opts:hover { color: var(--text); }
   .meta { color: var(--muted); font-size: 12px; margin-right: auto; }
   .meta b { color: var(--text); font-weight: 600; }
   button {
@@ -87,7 +89,9 @@
     <span class="meta" id="meta">Building the capture…</span>
     <button id="copy">Copy</button>
     <button id="pdf">Download PDF</button>
-    <button id="png" class="primary">Download PNG</button>
+    <button id="jpg">Download JPG</button>
+    <button id="png">Download PNG</button>
+    <button id="opts" title="Options">Options</button>
   </header>
   <div id="note" class="note hidden"></div>
   <main>
@@ -97,6 +101,7 @@
     </div>
   </main>
   <script src="lib/jspdf.umd.min.js"></script>
+  <script src="settings.js"></script>
   <script src="viewer.js"></script>
 </body>
 </html>

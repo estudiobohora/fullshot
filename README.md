@@ -12,9 +12,20 @@ A homemade replacement for GoFullPage. Captures the entire page, all the way dow
 
 ## Use
 
-Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and three buttons: **Copy**, **Download PDF**, **Download PNG**.
+Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. The highlighted one is whichever format you set as default.
 
 To change the shortcut: `chrome://extensions/shortcuts`.
+
+## Options
+
+Right click the icon and pick Options, or use the Options button in the viewer.
+
+- **Default format**: which button gets highlighted. All formats stay available on every capture.
+- **JPEG quality**: also applies to the image embedded in the PDF. Below roughly 80% text starts to smear.
+- **File name**: a template with `{title}`, `{domain}`, `{date}` and `{time}` tokens.
+- **Hide fixed and sticky elements**: on by default so headers do not repeat. Turn it off when a page keeps real content in a sticky panel.
+
+Settings live in `chrome.storage.sync`, so they follow your Chrome profile.
 
 ## How it works
 
@@ -47,6 +58,8 @@ manifest.json      MV3 configuration
 background.js      orchestrates scrolling and capture
 page.js            script injected into the page
 viewer.html/js     preview and export
+options.html/js    settings page
+settings.js        defaults and file name building, shared by all three
 lib/               jsPDF 2.5.2 (MIT)
 icons/
 tools/             icon generator

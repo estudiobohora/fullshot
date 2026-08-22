@@ -11,12 +11,15 @@ const els = {
   status: $("status"),
   preview: $("preview"),
   png: $("png"),
+  jpg: $("jpg"),
   pdf: $("pdf"),
   copy: $("copy"),
+  opts: $("opts"),
 };
 
 let canvas = null;
 let baseName = "screenshot";
+let settings = Object.assign({}, FS_DEFAULTS);
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -27,21 +30,6 @@ function loadImage(src) {
   });
 }
 
-function slug(text) {
-  return (text || "screenshot")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60)
-    .toLowerCase() || "screenshot";
-}
-
-function stamp() {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
-}
-
 function showNote(text) {
   els.note.textContent = text;
   els.note.classList.remove("hidden");
@@ -49,10 +37,14 @@ function showNote(text) {
 
 function fail(text) {
   els.status.textContent = text;
-  els.png.disabled = els.pdf.disabled = els.copy.disabled = true;
+  els.png.disabled = els.jpg.disabled = els.pdf.disabled = els.copy.disabled = true;
 }
 
 async function build() {
+  settings = await fsGetSettings();
+  const preferred = { png: els.png, jpeg: els.jpg, pdf: els.pdf }[settings.format];
+  if (preferred) preferred.classList.add("primary");
+
   const key = new URLSearchParams(location.search).get("key");
   if (!key) return fail("There is no capture to show.");
 
@@ -62,7 +54,11 @@ async function build() {
   }
   await chrome.storage.local.remove(key);
 
-  baseName = `${slug(stored.title)}-${stamp()}`;
+  baseName = fsBuildFilename(settings.filename, {
+    title: stored.title,
+    url: stored.url,
+    date: new Date(stored.createdAt || Date.now()),
+  });
 
   const images = [];
   for (const shot of stored.shots) images.push({ img: await loadImage(shot.dataUrl), y: shot.y });
@@ -141,6 +137,17 @@ els.png.addEventListener("click", async () => {
   }
 });
 
+els.jpg.addEventListener("click", async () => {
+  els.jpg.disabled = true;
+  try {
+    await download(await toBlob("image/jpeg", settings.jpegQuality), `${baseName}.jpg`);
+  } finally {
+    els.jpg.disabled = false;
+  }
+});
+
+els.opts.addEventListener("click", () => chrome.runtime.openOptionsPage());
+
 els.copy.addEventListener("click", async () => {
   const original = els.copy.textContent;
   try {
@@ -164,7 +171,7 @@ els.pdf.addEventListener("click", async () => {
     if (hPt <= PDF_MAX_PT) {
       // A single long page, exactly the size of the capture.
       const doc = new jsPDF({ orientation: wPt > hPt ? "l" : "p", unit: "pt", format: [wPt, hPt] });
-      doc.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, wPt, hPt);
+      doc.addImage(canvas.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, hPt);
       await download(doc.output("blob"), `${baseName}.pdf`);
     } else {
       // Too tall for one page: split into pages of the same width.
@@ -183,7 +190,7 @@ els.pdf.addEventListener("click", async () => {
         sctx.fillRect(0, 0, slice.width, slice.height);
         sctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
         if (i > 0) doc.addPage([wPt, sh * 0.75], "p");
-        doc.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, wPt, sh * 0.75);
+        doc.addImage(slice.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, sh * 0.75);
       }
       await download(doc.output("blob"), `${baseName}.pdf`);
       showNote(`The capture does not fit on a single PDF page, so it was split across ${pages} pages.`);

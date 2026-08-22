@@ -3,7 +3,13 @@
   "name": "FullShot",
   "version": "1.0.0",
   "description": "Capture the entire page, all the way down the scroll, and export it as PNG or PDF. No servers: everything happens in your browser.",
-  "permissions": ["activeTab", "scripting", "downloads", "storage", "unlimitedStorage"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage",
+    "unlimitedStorage"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -33,8 +39,16 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["viewer.html"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "viewer.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
-  ]
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
 }
