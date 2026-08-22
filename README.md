@@ -50,3 +50,10 @@ viewer.html/js  vista previa y exportación
 lib/            jsPDF 2.5.2 (MIT)
 icons/
 ```
+
+## Licencia
+
+FullShot se publica bajo licencia MIT, en el archivo `LICENSE`.
+
+Incluye jsPDF 2.5.2, también MIT. Su aviso de copyright viaja dentro de
+`lib/jspdf.umd.min.js`, así que redistribuir esta carpeta cumple con su licencia.
