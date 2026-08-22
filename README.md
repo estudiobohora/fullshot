@@ -1,6 +1,8 @@
 # FullShot
 
-A homemade replacement for GoFullPage. Captures the entire page, all the way down the scroll, and exports it as PNG or PDF. Everything happens inside your browser: nothing is uploaded anywhere.
+Captures a whole web page, not just the part that fits on screen, and exports it as PNG, JPG or PDF.
+
+No account, no server, no telemetry. The capture is built in your browser and stays there. It asks for access to one tab at a time, only while you are capturing it.
 
 ## Install (2 minutes)
 
@@ -36,7 +38,7 @@ Settings live in `chrome.storage.sync`, so they follow your Chrome profile.
 
 ## How it works
 
-Chrome will not let an extension capture anything outside the visible viewport, so FullShot does what GoFullPage did:
+Chrome will not let an extension capture anything outside the visible viewport, so the page has to be walked:
 
 1. Injects a script into the page, hides the scrollbars and turns off smooth scrolling.
 2. Scrolls through the whole page once to trigger lazy-loaded images.
