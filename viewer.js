@@ -2,7 +2,7 @@
 
 const MAX_DIM = 32000;      // practical canvas dimension limit in Chrome
 const MAX_AREA = 250e6;     // practical area limit
-const PDF_MAX_PT = 14400;   // 200 inches: maximum PDF page size
+const PDF_MAX_PT = 14400;   // 200 inches: maximum PDF page width/height
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -38,6 +38,14 @@ function showNote(text) {
 function fail(text) {
   els.status.textContent = text;
   els.png.disabled = els.jpg.disabled = els.pdf.disabled = els.copy.disabled = true;
+}
+
+function setMeta(width, height, slices, url) {
+  const cleanUrl = String(url || "").replace(/^https?:\/\//, "").slice(0, 70);
+  const dims = document.createElement("b");
+  dims.textContent = `${width}×${height} px`;
+  els.meta.textContent = "";
+  els.meta.append(dims, ` · ${slices} slices · ${cleanUrl}`);
 }
 
 async function build() {
@@ -107,8 +115,7 @@ async function build() {
   els.preview.src = canvas.toDataURL("image/png");
   els.preview.classList.remove("hidden");
   els.status.classList.add("hidden");
-  els.meta.innerHTML =
-    `<b>${canvas.width}×${canvas.height} px</b> · ${images.length} slices · ${stored.url.replace(/^https?:\/\//, "").slice(0, 70)}`;
+  setMeta(canvas.width, canvas.height, images.length, stored.url);
 }
 
 function toBlob(type, quality) {
@@ -165,17 +172,20 @@ els.pdf.addEventListener("click", async () => {
   els.pdf.textContent = "Generating…";
   try {
     const { jsPDF } = window.jspdf;
-    const wPt = canvas.width * 0.75;   // 1 CSS px = 0.75 pt
-    const hPt = canvas.height * 0.75;
+    const ptPerPx = 0.75;   // 1 CSS px = 0.75 pt
+    const pdfScale = Math.min(1, PDF_MAX_PT / (canvas.width * ptPerPx));
+    const wPt = canvas.width * ptPerPx * pdfScale;
+    const hPt = canvas.height * ptPerPx * pdfScale;
 
     if (hPt <= PDF_MAX_PT) {
-      // A single long page, exactly the size of the capture.
+      // A single long page, exactly the size of the capture or scaled down to fit PDF limits.
       const doc = new jsPDF({ orientation: wPt > hPt ? "l" : "p", unit: "pt", format: [wPt, hPt] });
       doc.addImage(canvas.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, hPt);
       await download(doc.output("blob"), `${baseName}.pdf`);
+      if (pdfScale < 1) showNote(`The PDF was scaled to ${Math.round(pdfScale * 100)}% so its width fits the PDF limit.`);
     } else {
       // Too tall for one page: split into pages of the same width.
-      const pageHpx = Math.floor(PDF_MAX_PT / 0.75);
+      const pageHpx = Math.floor(PDF_MAX_PT / (ptPerPx * pdfScale));
       const pages = Math.ceil(canvas.height / pageHpx);
       const doc = new jsPDF({ orientation: "p", unit: "pt", format: [wPt, PDF_MAX_PT] });
       const slice = document.createElement("canvas");
@@ -184,16 +194,18 @@ els.pdf.addEventListener("click", async () => {
       for (let i = 0; i < pages; i++) {
         const sy = i * pageHpx;
         const sh = Math.min(pageHpx, canvas.height - sy);
+        const pageHPt = sh * ptPerPx * pdfScale;
         slice.width = canvas.width;
         slice.height = sh;
         sctx.fillStyle = "#ffffff";
         sctx.fillRect(0, 0, slice.width, slice.height);
         sctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
-        if (i > 0) doc.addPage([wPt, sh * 0.75], "p");
-        doc.addImage(slice.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, sh * 0.75);
+        if (i > 0) doc.addPage([wPt, pageHPt], "p");
+        doc.addImage(slice.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, pageHPt);
       }
       await download(doc.output("blob"), `${baseName}.pdf`);
-      showNote(`The capture does not fit on a single PDF page, so it was split across ${pages} pages.`);
+      const scaleNote = pdfScale < 1 ? ` and scaled to ${Math.round(pdfScale * 100)}% width` : "";
+      showNote(`The capture does not fit on a single PDF page, so it was split across ${pages} pages${scaleNote}.`);
     }
   } catch (err) {
     console.error(err);

@@ -45,7 +45,10 @@ function refresh() {
   els.qval.textContent = `${Math.round(parseFloat(els.quality.value) * 100)}%`;
   const ext = (document.querySelector('input[name="format"]:checked') || {}).value || "png";
   const name = fsBuildFilename(els.filename.value, Object.assign({ date: new Date() }, SAMPLE));
-  els.preview.innerHTML = `Example: <b>${name}.${ext === "jpeg" ? "jpg" : ext}</b>`;
+  const strong = document.createElement("b");
+  strong.textContent = `${name}.${ext === "jpeg" ? "jpg" : ext}`;
+  els.preview.textContent = "Example: ";
+  els.preview.append(strong);
 }
 
 async function save() {
