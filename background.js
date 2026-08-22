@@ -19,7 +19,7 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function setBadge(tabId, text, color = "#2563eb") {
+async function setBadge(tabId, text, color = "#C9AB4C") { // Architectural Brass
   try {
     await chrome.action.setBadgeBackgroundColor({ color, tabId });
     await chrome.action.setBadgeText({ text, tabId });

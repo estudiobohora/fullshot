@@ -5,13 +5,16 @@
 <title>FullShot — Vista previa</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --border: #262b36;
-    --text: #e8eaed;
-    --muted: #9aa2b1;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
+    /* ToolTank Brand Guidelines v1.0 "A Digital Systems Studio" */
+    --bg: #0D1B2A;            /* ToolTank Navy */
+    --panel: #1C1F2A;         /* ToolTank Black */
+    --surface: #F0EDE8;       /* Warm Off-White */
+    --border: #2A3442;
+    --text: #F0EDE8;
+    --muted: #8B98A5;
+    --accent: #C9AB4C;        /* Architectural Brass */
+    --accent-hover: #D8BC65;
+    --info: #5F9F9A;          /* Muted Aqua, solo para avisos */
   }
   * { box-sizing: border-box; }
   body {
@@ -39,22 +42,23 @@
     font: inherit;
     font-weight: 600;
     color: var(--text);
-    background: #232936;
+    background: #223041;
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 8px 14px;
     cursor: pointer;
   }
-  button:hover { background: #2c3444; }
-  button.primary { background: var(--accent); border-color: var(--accent); }
-  button.primary:hover { background: var(--accent-hover); }
+  button:hover { background: #2A3442; }
+  /* El brass es claro: el texto encima va en navy, no en blanco. */
+  button.primary { background: var(--accent); border-color: var(--accent); color: #0D1B2A; }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
   button:disabled { opacity: .5; cursor: default; }
   main { padding: 24px; display: flex; justify-content: center; }
   #shell {
-    background: #fff;
+    background: var(--surface);
     border-radius: 6px;
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+    box-shadow: 0 30px 60px -22px rgba(0,0,0,.55);
     max-width: 1000px;
     width: 100%;
   }
@@ -69,9 +73,9 @@
     margin: 0 auto 16px;
     padding: 10px 14px;
     border-radius: 8px;
-    background: #2a2313;
-    border: 1px solid #5c4a18;
-    color: #f5d98a;
+    background: #16292B;
+    border: 1px solid #2F5A57;
+    color: #9CCFC9;
     font-size: 13px;
   }
   .hidden { display: none; }
