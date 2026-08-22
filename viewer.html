@@ -35,12 +35,9 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    padding: 12px 20px 10px;
+    padding: 12px 20px;
   }
   .brand { font-weight: 700; letter-spacing: -0.01em; }
-  .meta { color: var(--muted); font-size: 12px; padding: 0 20px 11px; }
-  .meta b { color: var(--text); font-weight: 600; }
-  .namehint { color: var(--info); font-size: 12px; padding: 0 20px 11px; margin-top: -11px; }
 
   /* The file name sits in the bar because it belongs to this capture, not to
      a global preference. The extension is shown but not editable. */
@@ -166,8 +163,6 @@
       <button id="png">Download PNG</button>
       <button id="gear" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
-    <div class="meta" id="meta">Building the capture…</div>
-    <div class="namehint hidden" id="namehint">Enter File Name Here</div>
     <div id="settings" class="hidden">
      <div class="settings-inner">
       <div>

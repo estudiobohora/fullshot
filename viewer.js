@@ -6,7 +6,6 @@ const PDF_MAX_PT = 14400;   // 200 inches: maximum PDF page width/height
 
 const $ = (id) => document.getElementById(id);
 const els = {
-  meta: $("meta"),
   note: $("note"),
   status: $("status"),
   preview: $("preview"),
@@ -18,7 +17,6 @@ const els = {
   gear: $("gear"),
   settingsPanel: $("settings"),
   name: $("name"),
-  namehint: $("namehint"),
   quality: $("quality"),
   qval: $("qval"),
   hideFixed: $("hideFixed"),
@@ -48,16 +46,6 @@ function fail(text) {
   els.status.textContent = text;
   els.png.disabled = els.jpg.disabled = els.pdf.disabled = els.copy.disabled = true;
   els.again.disabled = true;
-}
-
-// The slice count used to be here. It described how the tool works, not
-// anything the reader can act on.
-function setMeta(width, height, url) {
-  const cleanUrl = String(url || "").replace(/^https?:\/\//, "").slice(0, 70);
-  const dims = document.createElement("b");
-  dims.textContent = `${width}×${height} px`;
-  els.meta.textContent = "";
-  els.meta.append(dims, ` · ${cleanUrl}`);
 }
 
 async function build() {
@@ -130,13 +118,12 @@ async function build() {
   els.preview.src = canvas.toDataURL("image/png");
   els.preview.classList.remove("hidden");
   els.status.classList.add("hidden");
-  setMeta(canvas.width, canvas.height, stored.url);
 }
 
+// baseName is the fallback used when the box is left empty, so the box can stay
+// empty and show its placeholder instead of arriving pre-filled.
 function refreshBaseName() {
-  if (!source) return;
-  baseName = fsBuildFilename(settings.filename, source);
-  els.name.value = baseName;
+  if (source) baseName = fsBuildFilename(settings.filename, source);
 }
 
 // What actually gets downloaded: whatever is in the box, cleaned up. The box
@@ -184,10 +171,6 @@ async function saveSettings(patch) {
     // Sync can be off or full. The values still apply to this session.
   }
 }
-
-// The advice shows up while the name is being edited, not permanently.
-els.name.addEventListener("focus", () => els.namehint.classList.remove("hidden"));
-els.name.addEventListener("blur", () => els.namehint.classList.add("hidden"));
 
 els.gear.addEventListener("click", () => {
   const hidden = els.settingsPanel.classList.toggle("hidden");

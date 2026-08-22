@@ -12,7 +12,7 @@ A homemade replacement for GoFullPage. Captures the entire page, all the way dow
 
 ## Use
 
-Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. The file name box next to the logo is editable before you download.
+Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. Name the capture in the box next to the logo, or leave it empty for an automatic name.
 
 **Capture again** re-runs the capture on the same page without leaving the viewer. It works as long as that tab is still open on the same page.
 
@@ -20,7 +20,7 @@ To change the shortcut: `chrome://extensions/shortcuts`.
 
 ## Settings
 
-Everything lives in the viewer. The file name sits in the toolbar, already filled in from the page title and the date, and you can rewrite it before downloading. The gear opens the rest.
+Everything lives in the viewer. Type a file name in the toolbar box before downloading; leave it empty and the capture is named after the page title and the date. The gear opens the rest.
 
 - **JPEG quality**: also applies to the image embedded in the PDF. Below roughly 80% text starts to smear.
 - **Hide fixed and sticky elements**: on by default so headers do not repeat. It applies to the *next* capture, so turn it off and press Capture again when a page keeps real content in a sticky panel.
