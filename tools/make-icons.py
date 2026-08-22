@@ -8,8 +8,7 @@ to 16 px turns it to mush: the brackets smudge and the page disappears.
 import os
 from PIL import Image, ImageDraw
 
-# ToolTank Brand Guidelines v1.0 "A Digital Systems Studio" palette (2026-08-12).
-# NOTE: brand-kit/tooltank-brand.css holds the OLD palette (champagne/charcoal), superseded.
+# ToolTank palette. Swap these four values to re-skin the whole icon set.
 NAVY  = (13, 27, 42, 255)       # #0D1B2A  primary background
 PAPER = (240, 237, 232, 255)    # #F0EDE8  Warm Off-White, the page
 BRASS = (201, 171, 76, 255)     # #C9AB4C  Architectural Brass, the signature accent
