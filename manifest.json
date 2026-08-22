@@ -36,9 +36,5 @@
       },
       "description": "Capture the full page"
     }
-  },
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": true
   }
 }

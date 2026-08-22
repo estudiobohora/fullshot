@@ -12,20 +12,19 @@ A homemade replacement for GoFullPage. Captures the entire page, all the way dow
 
 ## Use
 
-Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. The one outlined in brass is whichever format you set as default.
+Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. The file name box next to the logo is editable before you download.
 
 **Capture again** re-runs the capture on the same page without leaving the viewer. It works as long as that tab is still open on the same page.
 
 To change the shortcut: `chrome://extensions/shortcuts`.
 
-## Options
+## Settings
 
-Right click the icon and pick Options, or use the Options button in the viewer.
+Everything lives in the viewer. The file name sits in the toolbar and is editable per capture; the gear opens the rest.
 
-- **Default format**: which button gets highlighted. All formats stay available on every capture.
+- **Default file name**: the template used for the next capture, with `{title}`, `{domain}`, `{date}` and `{time}` tokens. Editing the name in the toolbar only affects the capture in front of you.
 - **JPEG quality**: also applies to the image embedded in the PDF. Below roughly 80% text starts to smear.
-- **File name**: a template with `{title}`, `{domain}`, `{date}` and `{time}` tokens.
-- **Hide fixed and sticky elements**: on by default so headers do not repeat. Turn it off when a page keeps real content in a sticky panel.
+- **Hide fixed and sticky elements**: on by default so headers do not repeat. It applies to the *next* capture, so turn it off and press Capture again when a page keeps real content in a sticky panel.
 
 Settings live in `chrome.storage.sync`, so they follow your Chrome profile.
 
@@ -59,9 +58,8 @@ Chrome will not let an extension capture anything outside the visible viewport, 
 manifest.json      MV3 configuration
 background.js      orchestrates scrolling and capture
 page.js            script injected into the page
-viewer.html/js     preview and export
-options.html/js    settings page
-settings.js        defaults and file name building, shared by all three
+viewer.html/js     preview, export and settings
+settings.js        defaults and file name building
 lib/               jsPDF 2.5.2 (MIT)
 icons/
 tools/             icon generator

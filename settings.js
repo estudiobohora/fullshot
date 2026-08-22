@@ -1,21 +1,17 @@
 // FullShot — shared settings. Loaded by the service worker with importScripts()
-// and by viewer.html / options.html with a plain script tag, so the defaults
-// live in exactly one place.
+// and by viewer.html with a plain script tag, so the defaults live in exactly
+// one place.
 
 const FS_DEFAULTS = {
-  format: "png",                        // png | jpeg | pdf, the highlighted button
   jpegQuality: 0.92,                    // also used for the image inside the PDF
-  filename: "{title}-{date}-{time}",
+  filename: "{title}-{date}-{time}",    // default name; editable per capture
   hideFixed: true,                      // hide fixed/sticky after the first slice
 };
-
-const FS_FORMATS = ["png", "jpeg", "pdf"];
 
 // Storage can hold anything, including values from an older version or a hand
 // edited sync payload, so everything coming out of it gets checked.
 function fsSanitize(raw) {
   const s = Object.assign({}, FS_DEFAULTS, raw || {});
-  if (!FS_FORMATS.includes(s.format)) s.format = FS_DEFAULTS.format;
   const q = Number(s.jpegQuality);
   s.jpegQuality = isFinite(q) ? Math.min(1, Math.max(0.4, q)) : FS_DEFAULTS.jpegQuality;
   if (typeof s.filename !== "string" || !s.filename.trim()) s.filename = FS_DEFAULTS.filename;

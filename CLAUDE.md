@@ -15,12 +15,15 @@ Web Store in August 2026.
   `fixed`/`sticky` elements.
 - `viewer.js` — stitches the slices onto a canvas, shows the preview, exports
   PNG/PDF (jsPDF).
-- `options.html` / `options.js` — settings page, stored in `chrome.storage.sync`.
-- `settings.js` — defaults, sanitising and file name building. Loaded by the
-  service worker with `importScripts()` and by the two pages with a script tag,
-  so defaults and the file name format exist in exactly one place. Anything read
-  from storage goes through `fsSanitize()`: sync data can come from an older
-  version or another machine.
+- `settings.js` — defaults, sanitising and file name building, in
+  `chrome.storage.sync`. Loaded by the service worker with `importScripts()` and
+  by the viewer with a script tag, so defaults and the file name format exist in
+  exactly one place. Anything read from storage goes through `fsSanitize()`:
+  sync data can come from an older version or another machine.
+
+  There is no separate options page. Four settings did not justify a second tab,
+  and keeping the file name over there meant editing it far from the capture it
+  applied to, which is exactly how it ended up downloading stale names.
 - `tools/make-icons.py` — generates the four icon sizes. The icons are drawn by
   code, not by hand, so they can be adjusted instead of being opaque binaries.
 

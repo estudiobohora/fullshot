@@ -14,14 +14,22 @@ const els = {
   jpg: $("jpg"),
   pdf: $("pdf"),
   copy: $("copy"),
-  opts: $("opts"),
   again: $("again"),
+  gear: $("gear"),
+  settingsPanel: $("settings"),
+  name: $("name"),
+  ext: $("ext"),
+  template: $("template"),
+  quality: $("quality"),
+  qval: $("qval"),
+  hideFixed: $("hideFixed"),
 };
 
 let canvas = null;
 let baseName = "screenshot";
 let settings = Object.assign({}, FS_DEFAULTS);
 let sourceTabId = null;
+let source = null;              // title / url / createdAt of the capture
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -40,6 +48,7 @@ function showNote(text) {
 function fail(text) {
   els.status.textContent = text;
   els.png.disabled = els.jpg.disabled = els.pdf.disabled = els.copy.disabled = true;
+  els.again.disabled = true;
 }
 
 function setMeta(width, height, slices, url) {
@@ -52,11 +61,7 @@ function setMeta(width, height, slices, url) {
 
 async function build() {
   settings = await fsGetSettings();
-  const preferred = { png: els.png, jpeg: els.jpg, pdf: els.pdf }[settings.format];
-  if (preferred) {
-    preferred.classList.add("primary");
-    preferred.title = "Your default format";
-  }
+  fillSettingsPanel();
 
   const key = new URLSearchParams(location.search).get("key");
   if (!key) return fail("There is no capture to show.");
@@ -70,11 +75,12 @@ async function build() {
   sourceTabId = typeof stored.sourceTabId === "number" ? stored.sourceTabId : null;
   if (sourceTabId === null) els.again.disabled = true;
 
-  baseName = fsBuildFilename(settings.filename, {
+  source = {
     title: stored.title,
     url: stored.url,
     date: new Date(stored.createdAt || Date.now()),
-  });
+  };
+  refreshBaseName();
 
   const images = [];
   for (const shot of stored.shots) images.push({ img: await loadImage(shot.dataUrl), y: shot.y });
@@ -126,6 +132,25 @@ async function build() {
   setMeta(canvas.width, canvas.height, images.length, stored.url);
 }
 
+function refreshBaseName() {
+  if (!source) return;
+  baseName = fsBuildFilename(settings.filename, source);
+  els.name.value = baseName;
+}
+
+// What actually gets downloaded: whatever is in the box, cleaned up. Typing a
+// name here only affects this capture; the template in settings is the default
+// for the next one.
+function currentName() {
+  const typed = els.name.value.trim();
+  return typed ? fsBuildFilename(typed, source || {}) : baseName;
+}
+
+function setExt(ext) {
+  els.ext.textContent = "." + ext;
+}
+
+
 function toBlob(type, quality) {
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 }
@@ -143,10 +168,49 @@ async function download(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
+// --- Settings panel -------------------------------------------------------
+// These used to live in their own tab. Four settings did not justify a second
+// page, and having the file name over there meant editing it far from the
+// capture it applied to.
+
+function fillSettingsPanel() {
+  els.template.value = settings.filename;
+  els.quality.value = settings.jpegQuality;
+  els.hideFixed.checked = settings.hideFixed;
+  els.qval.textContent = `${Math.round(settings.jpegQuality * 100)}%`;
+}
+
+async function saveSettings(patch) {
+  settings = fsSanitize(Object.assign({}, settings, patch));
+  try {
+    await chrome.storage.sync.set(settings);
+  } catch (_) {
+    // Sync can be off or full. The values still apply to this session.
+  }
+}
+
+els.gear.addEventListener("click", () => {
+  const hidden = els.settingsPanel.classList.toggle("hidden");
+  els.gear.classList.toggle("open", !hidden);
+});
+
+els.template.addEventListener("change", async () => {
+  await saveSettings({ filename: els.template.value });
+  els.template.value = settings.filename;
+  refreshBaseName();                 // the box follows the new template
+});
+
+els.quality.addEventListener("input", () => {
+  els.qval.textContent = `${Math.round(parseFloat(els.quality.value) * 100)}%`;
+});
+els.quality.addEventListener("change", () => saveSettings({ jpegQuality: parseFloat(els.quality.value) }));
+els.hideFixed.addEventListener("change", () => saveSettings({ hideFixed: els.hideFixed.checked }));
+
 els.png.addEventListener("click", async () => {
   els.png.disabled = true;
   try {
-    await download(await toBlob("image/png"), `${baseName}.png`);
+    setExt("png");
+    await download(await toBlob("image/png"), `${currentName()}.png`);
   } finally {
     els.png.disabled = false;
   }
@@ -155,13 +219,12 @@ els.png.addEventListener("click", async () => {
 els.jpg.addEventListener("click", async () => {
   els.jpg.disabled = true;
   try {
-    await download(await toBlob("image/jpeg", settings.jpegQuality), `${baseName}.jpg`);
+    setExt("jpg");
+    await download(await toBlob("image/jpeg", settings.jpegQuality), `${currentName()}.jpg`);
   } finally {
     els.jpg.disabled = false;
   }
 });
-
-els.opts.addEventListener("click", () => chrome.runtime.openOptionsPage());
 
 els.again.addEventListener("click", async () => {
   els.again.disabled = true;
@@ -201,6 +264,7 @@ els.pdf.addEventListener("click", async () => {
   els.pdf.disabled = true;
   els.pdf.textContent = "Generating…";
   try {
+    setExt("pdf");
     const { jsPDF } = window.jspdf;
     const ptPerPx = 0.75;   // 1 CSS px = 0.75 pt
     const pdfScale = Math.min(1, PDF_MAX_PT / (canvas.width * ptPerPx));
@@ -211,7 +275,7 @@ els.pdf.addEventListener("click", async () => {
       // A single long page, exactly the size of the capture or scaled down to fit PDF limits.
       const doc = new jsPDF({ orientation: wPt > hPt ? "l" : "p", unit: "pt", format: [wPt, hPt] });
       doc.addImage(canvas.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, hPt);
-      await download(doc.output("blob"), `${baseName}.pdf`);
+      await download(doc.output("blob"), `${currentName()}.pdf`);
       if (pdfScale < 1) showNote(`The PDF was scaled to ${Math.round(pdfScale * 100)}% so its width fits the PDF limit.`);
     } else {
       // Too tall for one page: split into pages of the same width.
@@ -233,7 +297,7 @@ els.pdf.addEventListener("click", async () => {
         if (i > 0) doc.addPage([wPt, pageHPt], "p");
         doc.addImage(slice.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, pageHPt);
       }
-      await download(doc.output("blob"), `${baseName}.pdf`);
+      await download(doc.output("blob"), `${currentName()}.pdf`);
       const scaleNote = pdfScale < 1 ? ` and scaled to ${Math.round(pdfScale * 100)}% width` : "";
       showNote(`The capture does not fit on a single PDF page, so it was split across ${pages} pages${scaleNote}.`);
     }

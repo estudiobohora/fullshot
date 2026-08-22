@@ -27,21 +27,48 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    padding: 12px 20px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
   }
-  .brand { font-weight: 700; letter-spacing: -0.01em; margin-right: 4px; }
-  #opts { padding: 8px 10px; color: var(--muted); display: flex; align-items: center; }
-  #opts:hover { color: var(--text); }
-  /* Re-running the capture is not an export, so it sits apart from the three. */
-  #again { margin-right: 6px; }
-  .meta { color: var(--muted); font-size: 12px; margin-right: auto; }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 20px 10px;
+  }
+  .brand { font-weight: 700; letter-spacing: -0.01em; }
+  .meta { color: var(--muted); font-size: 12px; padding: 0 20px 11px; }
   .meta b { color: var(--text); font-weight: 600; }
+
+  /* The file name sits in the bar because it belongs to this capture, not to
+     a global preference. The extension is shown but not editable. */
+  .namebox {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+    background: #223041;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 10px 0 0;
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+  .namebox:focus-within {
+    border-color: var(--info);
+    box-shadow: 0 0 0 3px rgba(95, 159, 154, .16);
+  }
+  #name {
+    font: inherit;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    padding: 8px 4px 8px 12px;
+    width: 300px;
+    max-width: 42vw;
+  }
+  .ext { color: var(--muted); font-variant-numeric: tabular-nums; }
+
   button {
     font: inherit;
     font-weight: 600;
@@ -58,12 +85,33 @@
     border-color: var(--info);
     box-shadow: 0 0 0 3px rgba(95, 159, 154, .16), 0 0 18px rgba(95, 159, 154, .38);
   }
-  /* Every button looks the same. The default format is marked with a hairline
-     in brass instead of a filled button, so it reads as a preference and not
-     as "press this one". */
-  button.primary { border-color: var(--accent); }
-  button.primary:hover { border-color: var(--info); }
   button:disabled { opacity: .5; cursor: default; box-shadow: none; }
+  #again { margin-right: 4px; }
+  #gear { padding: 8px 10px; color: var(--muted); display: flex; align-items: center; }
+  #gear:hover { color: var(--text); }
+  #gear.open { color: var(--accent); }
+
+  /* Settings live here, folded away, instead of in their own tab. */
+  #settings {
+    border-top: 1px solid var(--border);
+    padding: 16px 20px 18px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  #settings label { display: block; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  #settings .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  #settings input[type="text"] {
+    font: inherit; color: var(--text); background: #223041;
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; width: 100%;
+  }
+  #settings .sliderrow { display: flex; align-items: center; gap: 10px; }
+  #settings input[type="range"] { flex: 1; accent-color: var(--accent); }
+  #settings input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+  #settings .check { display: flex; align-items: center; gap: 9px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); font-size: 14px; }
+  code { background: #223041; border-radius: 5px; padding: 1px 5px; font-size: 12px; color: var(--accent); }
+  .qval { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+
   main { padding: 24px; display: flex; justify-content: center; }
   #shell {
     background: var(--surface);
@@ -74,11 +122,7 @@
     width: 100%;
   }
   #preview { display: block; width: 100%; height: auto; }
-  #status {
-    padding: 60px 20px;
-    text-align: center;
-    color: var(--muted);
-  }
+  #status { padding: 60px 20px; text-align: center; color: var(--muted); }
   .note {
     max-width: 1000px;
     margin: 0 auto 16px;
@@ -89,19 +133,47 @@
     color: #9CCFC9;
     font-size: 13px;
   }
-  .hidden { display: none; }
+  /* An id beats a class, so #settings { display: grid } was overriding a plain
+     .hidden and the panel could never close. */
+  .hidden, #settings.hidden { display: none; }
 </style>
 </head>
 <body>
   <header>
-    <span class="brand">FullShot</span>
-    <span class="meta" id="meta">Building the capture…</span>
-    <button id="again">Capture again</button>
-    <button id="copy">Copy</button>
-    <button id="pdf">Download PDF</button>
-    <button id="jpg">Download JPG</button>
-    <button id="png">Download PNG</button>
-    <button id="opts" title="Options" aria-label="Options"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <div class="bar">
+      <span class="brand">FullShot</span>
+      <span class="namebox">
+        <input id="name" type="text" spellcheck="false" aria-label="File name">
+        <span class="ext" id="ext">.png</span>
+      </span>
+      <button id="again">Capture again</button>
+      <button id="copy">Copy</button>
+      <button id="pdf">Download PDF</button>
+      <button id="jpg">Download JPG</button>
+      <button id="png">Download PNG</button>
+      <button id="gear" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    </div>
+    <div class="meta" id="meta">Building the capture…</div>
+    <div id="settings" class="hidden">
+      <div>
+        <label for="template">Default file name</label>
+        <input id="template" type="text" spellcheck="false">
+        <p class="hint">Used for the next capture. Tokens: <code>{title}</code> <code>{domain}</code> <code>{date}</code> <code>{time}</code></p>
+      </div>
+      <div>
+        <label for="quality">JPEG quality</label>
+        <div class="sliderrow">
+          <input id="quality" type="range" min="0.4" max="1" step="0.01">
+          <span class="qval" id="qval">92%</span>
+        </div>
+        <p class="hint">Also applies to the image inside the PDF. Below roughly 80% text starts to smear.</p>
+      </div>
+      <div>
+        <label>Capture</label>
+        <span class="check"><input id="hideFixed" type="checkbox"> Hide fixed and sticky elements</span>
+        <p class="hint">Applies to the <b>next</b> capture, not this one. Turn it off when a page keeps real content in a sticky panel, then use Capture again.</p>
+      </div>
+    </div>
   </header>
   <div id="note" class="note hidden"></div>
   <main>
@@ -110,7 +182,6 @@
       <img id="preview" class="hidden" alt="Preview of the capture">
     </div>
   </main>
-  <script src="lib/jspdf.umd.min.js"></script>
   <script src="settings.js"></script>
   <script src="viewer.js"></script>
 </body>
