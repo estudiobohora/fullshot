@@ -20,6 +20,8 @@ const els = {
   quality: $("quality"),
   qval: $("qval"),
   hideFixed: $("hideFixed"),
+  dl: $("dl"),
+  dlmenu: $("dlmenu"),
   shell: $("shell"),
   crop: $("crop"),
   uncrop: $("uncrop"),
@@ -292,6 +294,25 @@ async function saveSettings(patch) {
   }
 }
 
+// --- Download menu ---------------------------------------------------------
+
+function openMenu(on) {
+  els.dlmenu.classList.toggle("hidden", !on);
+  els.dl.setAttribute("aria-expanded", on ? "true" : "false");
+}
+
+els.dl.addEventListener("click", (ev) => {
+  ev.stopPropagation();
+  openMenu(els.dlmenu.classList.contains("hidden"));
+});
+
+// Clicking anywhere else, or Escape, closes it.
+document.addEventListener("click", () => openMenu(false));
+els.dlmenu.addEventListener("click", (ev) => ev.stopPropagation());
+window.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") openMenu(false);
+});
+
 els.gear.addEventListener("click", () => {
   const hidden = els.settingsPanel.classList.toggle("hidden");
   els.gear.classList.toggle("open", !hidden);
@@ -304,6 +325,7 @@ els.quality.addEventListener("change", () => saveSettings({ jpegQuality: parseFl
 els.hideFixed.addEventListener("change", () => saveSettings({ hideFixed: els.hideFixed.checked }));
 
 els.png.addEventListener("click", async () => {
+  openMenu(false);
   els.png.disabled = true;
   try {
     await download(await toBlob("image/png"), `${currentName()}.png`);
@@ -313,6 +335,7 @@ els.png.addEventListener("click", async () => {
 });
 
 els.jpg.addEventListener("click", async () => {
+  openMenu(false);
   els.jpg.disabled = true;
   try {
     await download(await toBlob("image/jpeg", settings.jpegQuality), `${currentName()}.jpg`);
@@ -356,6 +379,7 @@ els.copy.addEventListener("click", async () => {
 });
 
 els.pdf.addEventListener("click", async () => {
+  openMenu(false);
   els.pdf.disabled = true;
   els.pdf.textContent = "Generating…";
   try {

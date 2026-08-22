@@ -88,6 +88,33 @@
     outline-offset: 2px;
   }
   #again { margin-right: 4px; }
+  /* Los tres formatos en un solo control: tres botones de "Download X" llenaban
+     la barra y decían lo mismo tres veces. */
+  .menu { position: relative; display: inline-flex; }
+  #dl { display: inline-flex; align-items: center; gap: 7px; }
+  #dlmenu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 18px 40px -16px rgba(0,0,0,.7);
+    z-index: 20;
+  }
+  #dlmenu button {
+    border-color: transparent;
+    background: transparent;
+    text-align: left;
+    padding: 8px 14px;
+  }
+  #dlmenu button:hover { background: #223041; border-color: var(--info); }
+
   #crop, #gear { padding: 8px 10px; color: var(--muted); display: flex; align-items: center; }
   #crop:hover { color: var(--text); }
   #crop.armed { color: var(--accent); border-color: var(--accent); }
@@ -166,9 +193,10 @@
     color: #9CCFC9;
     font-size: 13px;
   }
-  /* An id beats a class, so #settings { display: grid } was overriding a plain
-     .hidden and the panel could never close. */
-  .hidden, #settings.hidden { display: none; }
+  /* !important on purpose. An id selector outweighs a class, so any element with
+     an id and its own display value (#settings, #dlmenu) silently ignores a
+     plain .hidden and shows up when it should be closed. This bit twice. */
+  .hidden { display: none !important; }
 
   /* Nothing here needs motion to be understood. */
   @media (prefers-reduced-motion: reduce) {
@@ -186,9 +214,16 @@
       </span>
       <button id="again">Capture again</button>
       <button id="copy">Copy</button>
-      <button id="pdf">Download PDF</button>
-      <button id="jpg">Download JPG</button>
-      <button id="png">Download PNG</button>
+      <span class="menu">
+        <button id="dl" aria-haspopup="true" aria-expanded="false">Download
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="dlmenu" class="hidden" role="menu">
+          <button id="png" role="menuitem">PNG</button>
+          <button id="jpg" role="menuitem">JPG</button>
+          <button id="pdf" role="menuitem">PDF</button>
+        </div>
+      </span>
       <button id="crop" title="Select an area to crop" aria-label="Select an area to crop"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
       <button id="uncrop" class="hidden" title="Undo crop">Undo crop</button>
       <button id="gear" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>

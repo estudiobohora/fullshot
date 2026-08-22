@@ -12,7 +12,7 @@ A homemade replacement for GoFullPage. Captures the entire page, all the way dow
 
 ## Use
 
-Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and buttons to **Copy**, **Download PDF**, **Download JPG** or **Download PNG**. Name the capture in the box next to the logo, or leave it empty for an automatic name.
+Click the icon, or press `Alt+Shift+P`. The badge shows progress (`3/7`). When it finishes, a tab opens with the preview and **Copy**, and a **Download** menu with PNG, JPG and PDF. Name the capture in the box next to the logo, or leave it empty for an automatic name.
 
 There are two ways to capture:
 
