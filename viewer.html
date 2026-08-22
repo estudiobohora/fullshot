@@ -84,19 +84,27 @@
     border-color: var(--info);
     box-shadow: 0 0 0 3px rgba(95, 159, 154, .16), 0 0 18px rgba(95, 159, 154, .38);
   }
-  button:disabled { opacity: .5; cursor: default; box-shadow: none; }
+  button:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  /* Keyboard users get the same aqua ring the mouse gets on hover. */
+  button:focus-visible, #name:focus-visible, input:focus-visible {
+    outline: 2px solid var(--info);
+    outline-offset: 2px;
+  }
   #again { margin-right: 4px; }
   #gear { padding: 8px 10px; color: var(--muted); display: flex; align-items: center; }
   #gear:hover { color: var(--text); }
   #gear.open { color: var(--accent); }
 
   /* Settings live here, folded away, instead of in their own tab. */
-  #settings {
-    border-top: 1px solid var(--border);
-    padding: 16px 20px 18px;
+  #settings { border-top: 1px solid var(--border); }
+  /* The columns share the full width. Capping them left half the header empty
+     on wide screens, which is what looked wrong. */
+  .settings-inner {
+    padding: 18px 20px 20px;
     display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 380px));
+    gap: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-items: start;
   }
   #settings label { display: block; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
   #settings .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
@@ -120,7 +128,9 @@
     width: 100%;
   }
   #preview { display: block; width: 100%; height: auto; }
-  #status { padding: 60px 20px; text-align: center; color: var(--muted); }
+  /* This sits on the light surface, not on navy, so it needs its own colour.
+     var(--muted) here measured 2.52:1, well under the 4.5:1 floor. */
+  #status { padding: 60px 20px; text-align: center; color: #55606E; }
   .note {
     max-width: 1000px;
     margin: 0 auto 16px;
@@ -134,6 +144,11 @@
   /* An id beats a class, so #settings { display: grid } was overriding a plain
      .hidden and the panel could never close. */
   .hidden, #settings.hidden { display: none; }
+
+  /* Nothing here needs motion to be understood. */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -154,6 +169,7 @@
     <div class="meta" id="meta">Building the capture…</div>
     <div class="namehint hidden" id="namehint">Enter File Name Here</div>
     <div id="settings" class="hidden">
+     <div class="settings-inner">
       <div>
         <label for="quality">JPEG quality</label>
         <div class="sliderrow">
@@ -167,6 +183,7 @@
         <span class="check"><input id="hideFixed" type="checkbox"> Hide fixed and sticky elements</span>
         <p class="hint">Applies to the <b>next</b> capture, not this one. Turn it off when a page keeps real content in a sticky panel, then use Capture again.</p>
       </div>
+     </div>
     </div>
   </header>
   <div id="note" class="note hidden"></div>

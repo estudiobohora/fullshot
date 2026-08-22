@@ -50,12 +50,14 @@ function fail(text) {
   els.again.disabled = true;
 }
 
-function setMeta(width, height, slices, url) {
+// The slice count used to be here. It described how the tool works, not
+// anything the reader can act on.
+function setMeta(width, height, url) {
   const cleanUrl = String(url || "").replace(/^https?:\/\//, "").slice(0, 70);
   const dims = document.createElement("b");
   dims.textContent = `${width}×${height} px`;
   els.meta.textContent = "";
-  els.meta.append(dims, ` · ${slices} slices · ${cleanUrl}`);
+  els.meta.append(dims, ` · ${cleanUrl}`);
 }
 
 async function build() {
@@ -128,7 +130,7 @@ async function build() {
   els.preview.src = canvas.toDataURL("image/png");
   els.preview.classList.remove("hidden");
   els.status.classList.add("hidden");
-  setMeta(canvas.width, canvas.height, images.length, stored.url);
+  setMeta(canvas.width, canvas.height, stored.url);
 }
 
 function refreshBaseName() {
