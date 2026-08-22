@@ -18,7 +18,6 @@ const els = {
   gear: $("gear"),
   settingsPanel: $("settings"),
   name: $("name"),
-  ext: $("ext"),
   namehint: $("namehint"),
   quality: $("quality"),
   qval: $("qval"),
@@ -145,9 +144,6 @@ function currentName() {
   return typed ? fsBuildFilename(typed, source || {}) : baseName;
 }
 
-function setExt(ext) {
-  els.ext.textContent = "." + ext;
-}
 
 
 function toBlob(type, quality) {
@@ -205,7 +201,6 @@ els.hideFixed.addEventListener("change", () => saveSettings({ hideFixed: els.hid
 els.png.addEventListener("click", async () => {
   els.png.disabled = true;
   try {
-    setExt("png");
     await download(await toBlob("image/png"), `${currentName()}.png`);
   } finally {
     els.png.disabled = false;
@@ -215,7 +210,6 @@ els.png.addEventListener("click", async () => {
 els.jpg.addEventListener("click", async () => {
   els.jpg.disabled = true;
   try {
-    setExt("jpg");
     await download(await toBlob("image/jpeg", settings.jpegQuality), `${currentName()}.jpg`);
   } finally {
     els.jpg.disabled = false;
@@ -260,7 +254,6 @@ els.pdf.addEventListener("click", async () => {
   els.pdf.disabled = true;
   els.pdf.textContent = "Generating…";
   try {
-    setExt("pdf");
     const { jsPDF } = window.jspdf;
     const ptPerPx = 0.75;   // 1 CSS px = 0.75 pt
     const pdfScale = Math.min(1, PDF_MAX_PT / (canvas.width * ptPerPx));
