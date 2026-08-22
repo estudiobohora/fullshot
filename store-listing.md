@@ -174,3 +174,16 @@ Regenerate with:
 ```
 python tools/make-store-shots.py
 ```
+
+## Promotional tile
+
+`store-assets/promo-tile-440x280.png`, the small tile shown on the listing.
+Optional, but the slot looks empty without it.
+
+```
+python tools/make-promo-tile.py
+```
+
+## Store icon
+
+`icons/icon128.png`, already the right size.
