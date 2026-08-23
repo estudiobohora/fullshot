@@ -34,7 +34,7 @@ Everything lives in the viewer. Type a file name in the toolbar box before downl
 - **JPEG quality**: also applies to the image embedded in the PDF. Below roughly 80% text starts to smear.
 - **Hide fixed and sticky elements**: on by default so headers do not repeat. It applies to the *next* capture, so turn it off and press Capture again when a page keeps real content in a sticky panel.
 
-Settings live in `chrome.storage.sync`, so they follow your Chrome profile.
+Settings live in `chrome.storage.local`, so they stay on this machine and never leave it.
 
 ## How it works
 

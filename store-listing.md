@@ -110,11 +110,12 @@ read the download history or touch any other file.
 ### storage
 
 ```
-Two uses. chrome.storage.local holds the captured sections between the service
-worker and the viewer tab, because the image data cannot be passed directly
-between them; the viewer deletes them as soon as it has read them. chrome.storage.sync
-holds two user preferences: the JPEG quality and whether fixed elements are
-hidden during capture. No browsing data or page content is stored.
+Two uses, both chrome.storage.local. It holds the captured sections between the
+service worker and the viewer tab, because the image data cannot be passed
+directly between them; the viewer deletes them as soon as it has read them. It
+also holds three user preferences: the JPEG quality, the file name format, and
+whether fixed elements are hidden during capture. Nothing is synced to any
+account. No browsing data or page content is stored.
 ```
 
 ### unlimitedStorage
@@ -131,12 +132,34 @@ one hour are cleared on startup.
 
 ## Data usage disclosure
 
-Every box: **not collected**.
+Tick **Website content**. Leave every other box unticked.
 
-FullShot does not collect personally identifiable information, health
+Do NOT tick "nothing collected" here. Chrome defines handling user data broadly
+— collecting, transmitting, using or sharing — and the captured image IS page
+content the extension works with. More to the point: the privacy policy states
+plainly that the extension processes the content of the page you capture. If
+this form claimed nothing is handled, the form and the policy would contradict
+each other, and that inconsistency is what a reviewer flags. Declaring it with
+an honest explanation costs nothing; omitting it is what gets items rejected.
+
+Explanation to paste alongside Website content:
+
+```
+The extension captures an image of the page the user explicitly chooses to
+screenshot. That image is processed entirely on the user's device and is never
+transmitted anywhere. The extension makes no network requests of any kind.
+```
+
+Not ticked, and all true: personally identifiable information, health
 information, financial information, authentication information, personal
-communications, location, browsing history, user activity, or website content
-sent anywhere. The captured image never leaves the device.
+communications, location, web history, user activity.
+
+## Remote code
+
+Select **"No, I am not using remote code"**. Everything ships inside the
+package, jsPDF included, in `lib/`. No CDN, no eval, no remotely hosted script.
+
+## Certifications
 
 Certifications to tick:
 
@@ -147,17 +170,24 @@ Certifications to tick:
 ## Single purpose
 
 ```
-Capturing the full length of a web page as an image or PDF, saved locally.
+FullShot captures a web page as an image: either its full length, scrolled and
+stitched into a single image, or a region the user selects. The result opens in
+a preview tab where the user saves it locally as PNG, JPG or PDF. That is its
+only function.
 ```
 
 ## Privacy policy URL
 
-Required because the form asks for one even when nothing is collected. The
-README section "Permissions, and why" covers it, or point at the repository:
+Required because the extension handles user data (the captured page content),
+not merely because the form asks. It must point DIRECTLY at a page whose content
+is the policy — a repository, a homepage, a Google Doc or anything behind a login
+gets rejected. This is what the first submission was rejected for.
 
 ```
-https://github.com/tooltank/fullshot
+https://fullshot-privacy.vercel.app
 ```
+
+Source of that page: `My Business\fullshot-privacy\index.html`.
 
 ---
 

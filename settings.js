@@ -9,7 +9,7 @@ const FS_DEFAULTS = {
 };
 
 // Storage can hold anything, including values from an older version or a hand
-// edited sync payload, so everything coming out of it gets checked.
+// edited storage payload, so everything coming out of it gets checked.
 function fsSanitize(raw) {
   const s = Object.assign({}, FS_DEFAULTS, raw || {});
   const q = Number(s.jpegQuality);
@@ -22,9 +22,9 @@ function fsSanitize(raw) {
 
 async function fsGetSettings() {
   try {
-    return fsSanitize(await chrome.storage.sync.get(FS_DEFAULTS));
+    return fsSanitize(await chrome.storage.local.get(FS_DEFAULTS));
   } catch (_) {
-    return Object.assign({}, FS_DEFAULTS);   // sync disabled or unavailable
+    return Object.assign({}, FS_DEFAULTS);   // storage unavailable
   }
 }
 

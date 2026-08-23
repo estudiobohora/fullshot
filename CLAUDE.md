@@ -16,10 +16,13 @@ Web Store in August 2026.
 - `viewer.js` — stitches the slices onto a canvas, shows the preview, exports
   PNG/PDF (jsPDF).
 - `settings.js` — defaults, sanitising and file name building, in
-  `chrome.storage.sync`. Loaded by the service worker with `importScripts()` and
+  `chrome.storage.local`. Loaded by the service worker with `importScripts()` and
   by the viewer with a script tag, so defaults and the file name format exist in
   exactly one place. Anything read from storage goes through `fsSanitize()`:
-  sync data can come from an older version or another machine.
+  stored data can come from an older version. Deliberately NOT `storage.sync` —
+  sync would replicate preferences through the user's Google account, which
+  breaks the "nothing leaves your device" claim in the privacy policy for the
+  sake of three preferences. Keep it local.
 
   There is no separate options page. Four settings did not justify a second tab,
   and keeping the file name over there meant editing it far from the capture it

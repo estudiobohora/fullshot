@@ -288,9 +288,9 @@ function fillSettingsPanel() {
 async function saveSettings(patch) {
   settings = fsSanitize(Object.assign({}, settings, patch));
   try {
-    await chrome.storage.sync.set(settings);
+    await chrome.storage.local.set(settings);
   } catch (_) {
-    // Sync can be off or full. The values still apply to this session.
+    // Storage can fail or be full. The values still apply to this session.
   }
 }
 
