@@ -423,11 +423,11 @@ els.pdf.addEventListener("click", async () => {
   } catch (err) {
     console.error(err);
     els.pdf.textContent = "Error";
-    setTimeout(() => (els.pdf.textContent = "Download PDF"), 2000);
+    setTimeout(() => (els.pdf.textContent = "PDF"), 2000);
     els.pdf.disabled = false;
     return;
   }
-  els.pdf.textContent = "Download PDF";
+  els.pdf.textContent = "PDF";
   els.pdf.disabled = false;
 });
 
