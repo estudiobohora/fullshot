@@ -142,13 +142,19 @@ this form claimed nothing is handled, the form and the policy would contradict
 each other, and that inconsistency is what a reviewer flags. Declaring it with
 an honest explanation costs nothing; omitting it is what gets items rejected.
 
-Explanation to paste alongside Website content:
+There is NO free-text field here. The data usage section is checkboxes only:
+one group to disclose the data types, a second group for the certifications.
+Tick Website content and move on — do not go hunting for a box to explain it in.
 
-```
-The extension captures an image of the page the user explicitly chooses to
-screenshot. That image is processed entirely on the user's device and is never
-transmitted anywhere. The extension makes no network requests of any kind.
-```
+The explanation lives in the privacy policy, and this is the sentence that
+carries it there (already published on the policy page, no action needed):
+
+> The extension captures an image of the page the user explicitly chooses to
+> screenshot. That image is processed entirely on the user's device and is never
+> transmitted anywhere. The extension makes no network requests of any kind.
+
+That is exactly why the policy URL matters: the checkbox says WHAT is handled,
+the policy says HOW. The form has no room for the second half.
 
 Not ticked, and all true: personally identifiable information, health
 information, financial information, authentication information, personal
@@ -184,10 +190,15 @@ is the policy — a repository, a homepage, a Google Doc or anything behind a lo
 gets rejected. This is what the first submission was rejected for.
 
 ```
-https://fullshot-privacy.vercel.app
+https://tooltank.io/fullshot/privacidad/
 ```
 
-Source of that page: `My Business\fullshot-privacy\index.html`.
+Sin `www` y con la barra final: el sitio redirige www → apex de forma permanente,
+y un enlace que redirige es justo lo que puede volver a marcarse.
+
+La página está en inglés por defecto (el revisor lee en inglés) con la versión en
+español debajo. Fuente: `ToolTank\Website\fullshot\privacidad\index.html`.
+La copia suelta en `My Business\fullshot-privacy\` quedó obsoleta.
 
 ---
 

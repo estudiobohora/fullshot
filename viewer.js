@@ -126,11 +126,12 @@ async function build() {
   // Region mode hands over a full-viewport shot plus the rectangle to keep.
   if (stored.region) {
     const rg = stored.region;
+    const rx = Math.round(rg.x * f), ry = Math.round(rg.y * f);
     const cut = document.createElement("canvas");
-    cut.width = Math.max(1, Math.min(rg.width, canvas.width - rg.x));
-    cut.height = Math.max(1, Math.min(rg.height, canvas.height - rg.y));
+    cut.width  = Math.max(1, Math.min(Math.round(rg.width  * f), canvas.width  - rx));
+    cut.height = Math.max(1, Math.min(Math.round(rg.height * f), canvas.height - ry));
     const rctx = cut.getContext("2d", { alpha: false });
-    rctx.drawImage(canvas, rg.x, rg.y, cut.width, cut.height, 0, 0, cut.width, cut.height);
+    rctx.drawImage(canvas, rx, ry, cut.width, cut.height, 0, 0, cut.width, cut.height);
     canvas = cut;
   }
 

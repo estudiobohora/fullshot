@@ -194,7 +194,7 @@ async function startRegion(tab) {
     if (!pick || !pick.ok) return;                 // cancelado con Esc
 
     const dataUrl = await captureVisible(tab.windowId);
-    const { width: capW } = await measure(dataUrl);
+    const { width: capW, height: capH } = await measure(dataUrl);
 
     // La captura viene en píxeles del monitor; la selección, en píxeles CSS.
     const scale = capW / (pick.viewportWidth || tab.width || capW);
@@ -211,10 +211,13 @@ async function startRegion(tab) {
           height: Math.round(r.height * scale),
         },
         viewportWidth: pick.viewportWidth,
-        stepPx: r.height,
+        // El viewer arma primero el viewport completo y DESPUÉS recorta con
+        // `region`. Si aquí guardáramos el alto del recorte, el canvas nacería
+        // más corto que la imagen y el recorte caería fuera.
+        stepPx: Math.round(capH / scale),
         scale,
-        totalWidth: r.width,
-        totalHeight: r.height,
+        totalWidth: Math.round(capW / scale),
+        totalHeight: Math.round(capH / scale),
         title: tab.title || "screenshot",
         url: tab.url || "",
         sourceTabId: tab.id,

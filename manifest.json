@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FullShot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Capture the entire page, all the way down the scroll, and export it as PNG or PDF. No servers: everything happens in your browser.",
   "permissions": [
     "activeTab",
