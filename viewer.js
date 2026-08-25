@@ -262,6 +262,20 @@ function toBlob(type, quality) {
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 }
 
+// minipdf necesita los bytes crudos del JPEG, no un data URL.
+function canvasToJpegBytes(cv, quality) {
+  return new Promise((resolve, reject) => {
+    cv.toBlob(
+      (b) => {
+        if (!b) return reject(new Error("The image could not be encoded."));
+        b.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)), reject);
+      },
+      "image/jpeg",
+      quality
+    );
+  });
+}
+
 async function download(blob, filename) {
   const url = URL.createObjectURL(blob);
   try {
@@ -384,41 +398,45 @@ els.pdf.addEventListener("click", async () => {
   els.pdf.disabled = true;
   els.pdf.textContent = "Generating…";
   try {
-    const { jsPDF } = window.jspdf;
     const ptPerPx = 0.75;   // 1 CSS px = 0.75 pt
     const pdfScale = Math.min(1, PDF_MAX_PT / (canvas.width * ptPerPx));
     const wPt = canvas.width * ptPerPx * pdfScale;
     const hPt = canvas.height * ptPerPx * pdfScale;
 
     if (hPt <= PDF_MAX_PT) {
-      // A single long page, exactly the size of the capture or scaled down to fit PDF limits.
-      const doc = new jsPDF({ orientation: wPt > hPt ? "l" : "p", unit: "pt", format: [wPt, hPt] });
-      doc.addImage(canvas.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, hPt);
-      await download(doc.output("blob"), `${currentName()}.pdf`);
+      // Una sola página larga, del tamaño exacto de la captura.
+      const jpeg = await canvasToJpegBytes(canvas, settings.jpegQuality);
+      const pdf = fsBuildPdf([{ jpeg, pxW: canvas.width, pxH: canvas.height, wPt, hPt }]);
+      await download(pdf, `${currentName()}.pdf`);
       if (pdfScale < 1) showNote(`The PDF was scaled to ${Math.round(pdfScale * 100)}% so its width fits the PDF limit.`);
     } else {
-      // Too tall for one page: split into pages of the same width.
+      // Demasiado alta para una página: se corta en páginas del mismo ancho.
       const pageHpx = Math.floor(PDF_MAX_PT / (ptPerPx * pdfScale));
-      const pages = Math.ceil(canvas.height / pageHpx);
-      const doc = new jsPDF({ orientation: "p", unit: "pt", format: [wPt, PDF_MAX_PT] });
+      const count = Math.ceil(canvas.height / pageHpx);
       const slice = document.createElement("canvas");
       const sctx = slice.getContext("2d", { alpha: false });
+      const pageList = [];
 
-      for (let i = 0; i < pages; i++) {
+      for (let i = 0; i < count; i++) {
         const sy = i * pageHpx;
         const sh = Math.min(pageHpx, canvas.height - sy);
-        const pageHPt = sh * ptPerPx * pdfScale;
         slice.width = canvas.width;
         slice.height = sh;
         sctx.fillStyle = "#ffffff";
         sctx.fillRect(0, 0, slice.width, slice.height);
         sctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
-        if (i > 0) doc.addPage([wPt, pageHPt], "p");
-        doc.addImage(slice.toDataURL("image/jpeg", settings.jpegQuality), "JPEG", 0, 0, wPt, pageHPt);
+        pageList.push({
+          jpeg: await canvasToJpegBytes(slice, settings.jpegQuality),
+          pxW: slice.width,
+          pxH: slice.height,
+          wPt,
+          hPt: sh * ptPerPx * pdfScale,
+        });
       }
-      await download(doc.output("blob"), `${currentName()}.pdf`);
+
+      await download(fsBuildPdf(pageList), `${currentName()}.pdf`);
       const scaleNote = pdfScale < 1 ? ` and scaled to ${Math.round(pdfScale * 100)}% width` : "";
-      showNote(`The capture does not fit on a single PDF page, so it was split across ${pages} pages${scaleNote}.`);
+      showNote(`The capture does not fit on a single PDF page, so it was split across ${count} pages${scaleNote}.`);
     }
   } catch (err) {
     console.error(err);
