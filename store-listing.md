@@ -163,7 +163,12 @@ communications, location, web history, user activity.
 ## Remote code
 
 Select **"No, I am not using remote code"**. Everything ships inside the
-package, jsPDF included, in `lib/`. No CDN, no eval, no remotely hosted script.
+package and there are no third-party libraries at all: the PDF is written by
+`minipdf.js`, which is ours. No CDN, no eval, no remotely hosted script.
+
+This wording matters. The earlier package bundled jsPDF, whose minified file
+contains a cdnjs URL, and that alone is remote code as far as review is
+concerned. Do not describe the package as "vendored in `lib/`" again.
 
 ## Certifications
 

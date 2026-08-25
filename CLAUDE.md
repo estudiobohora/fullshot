@@ -14,7 +14,9 @@ Web Store in August 2026.
   scrollbars, disables smooth scrolling, triggers lazy-loading and hides
   `fixed`/`sticky` elements.
 - `viewer.js` — stitches the slices onto a canvas, shows the preview, exports
-  PNG/PDF (jsPDF).
+  PNG/JPG/PDF.
+- `minipdf.js` — writes the PDF: one full-bleed JPEG per page, nothing else.
+  Replaced jsPDF. Deliberately minimal, see invariant 5 before extending it.
 - `settings.js` — defaults, sanitising and file name building, in
   `chrome.storage.local`. Loaded by the service worker with `importScripts()` and
   by the viewer with a script tag, so defaults and the file name format exist in
@@ -39,8 +41,14 @@ Web Store in August 2026.
 3. `fixed`/`sticky` elements are hidden AFTER the first slice and always
    restored, even if the capture fails.
 4. `activeTab` only. Never add broad `host_permissions`.
-5. No remote scripts: the MV3 CSP blocks them. Everything is vendored in `lib/`.
-   This also rules out remote web fonts.
+5. No remote scripts, and no third-party libraries at all. The MV3 CSP blocks
+   remote code, and the Web Store rejects a bundle that merely CONTAINS a remote
+   URL, even one that never runs. That is why jsPDF was removed in c715c2c: it
+   carried a cdnjs call inside the minified file. The PDF is now written by
+   `minipdf.js`, which is ours and depends on nothing. There is no `lib/` any
+   more and nothing should go back into one. Do NOT "improve" PDF export by
+   reaching for an established library: that is the exact change that cost a
+   rejection. This also rules out remote web fonts.
 6. The document height is re-read on every scroll hop, never measured once up
    front. Lazy content makes pages grow mid-capture; freezing the height cuts
    the capture short silently. `MAX_STEPS` is the backstop for infinite scroll.

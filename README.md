@@ -68,7 +68,7 @@ background.js      orchestrates scrolling and capture
 page.js            script injected into the page
 viewer.html/js     preview, export and settings
 settings.js        defaults and file name building
-lib/               jsPDF 2.5.2 (MIT)
+minipdf.js         writes the PDF, no dependencies
 icons/
 tools/             icon generator
 ```
@@ -87,4 +87,4 @@ It writes all four sizes. There are three levels of detail on purpose: scaling a
 
 FullShot is released under the MIT license, in the `LICENSE` file.
 
-It bundles jsPDF 2.5.2, also MIT. Its copyright notice travels inside `lib/jspdf.umd.min.js`, so redistributing this folder satisfies its license.
+It bundles no third-party code. The PDF writer, `minipdf.js`, is part of this project, so the MIT license above covers the whole folder.
