@@ -138,6 +138,12 @@ async function build() {
   fullCanvas = canvas;          // kept so Undo crop can restore it
   els.preview.src = canvas.toDataURL("image/png");
   els.preview.classList.remove("hidden");
+
+  // The status starts as "Stitching the slices…" written into the HTML and
+  // nobody cleared it, so a finished capture still said it was working. With a
+  // tall preview, which takes a moment to paint, the tab looked stuck.
+  els.status.textContent = "";
+  els.status.classList.add("hidden");
   els.status.classList.add("hidden");
 }
 

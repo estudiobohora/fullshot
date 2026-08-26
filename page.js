@@ -3,8 +3,21 @@
 // without scrollbars or repeated fixed headers.
 
 (() => {
-  if (window.__fullshotInstalled) return;
-  window.__fullshotInstalled = true;
+  // Unmount the previous install instead of surrendering to a flag.
+  //
+  // A boolean looks like enough, but when the extension updates (a Web Store
+  // update, or the reload button while developing) the old script DIES with its
+  // context while the flag stays on the page. The new injection saw the flag,
+  // bailed out, and nobody was left listening: the extension went silent on
+  // every already-open tab until the user reloaded it by hand, which they have
+  // no reason to think of.
+  //
+  // __fullshotCleanup belongs to the old context: if it is still alive it
+  // removes its listener cleanly, and if it died calling it throws and we carry
+  // on. Both paths end with exactly one listener, this context's.
+  if (typeof window.__fullshotCleanup === "function") {
+    try { window.__fullshotCleanup(); } catch (_) { /* context invalidated */ }
+  }
 
   const state = {
     originalScrollX: 0,
@@ -42,6 +55,11 @@
 
   function injectStyle() {
     if (state.styleEl) return;
+    // The script now re-runs on every capture, so state starts empty. If an
+    // earlier capture died halfway its <style> is still in the DOM: reuse it by
+    // id instead of stacking an identical one on top.
+    const previous = document.getElementById("__fullshot_style__");
+    if (previous) { state.styleEl = previous; return; }
     const el = document.createElement("style");
     el.id = "__fullshot_style__";
     el.textContent = `
@@ -178,7 +196,7 @@
     });
   }
 
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  const onMessage = (msg, _sender, sendResponse) => {
     (async () => {
       switch (msg.type) {
         case "FS_PREPARE": {
@@ -242,5 +260,8 @@
       }
     })();
     return true; // async response
-  });
+  };
+
+  chrome.runtime.onMessage.addListener(onMessage);
+  window.__fullshotCleanup = () => chrome.runtime.onMessage.removeListener(onMessage);
 })();
