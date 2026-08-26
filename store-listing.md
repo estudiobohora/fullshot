@@ -65,8 +65,8 @@ KNOWN LIMITS
 
 • Does not work on chrome:// pages or the Chrome Web Store. That is a Chrome
   restriction, not a bug.
-• Pages that scroll inside an inner panel rather than the page itself are not
-  captured in full.
+• Gmail, Notion, Slack and other web apps scroll inside a pane instead of
+  the page. FullShot detects that pane and captures it in full.
 • Very tall pages are scaled down to fit what a browser canvas can hold, and the
   viewer tells you when that happens.
 ```

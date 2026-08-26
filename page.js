@@ -3,14 +3,28 @@
 // without scrollbars or repeated fixed headers.
 
 (() => {
-  if (window.__fullshotInstalled) return;
-  window.__fullshotInstalled = true;
+  // Desmontar la instalacion anterior en vez de rendirse ante una bandera.
+  //
+  // Una bandera booleana parece bastar, pero al recargar la extension (el boton
+  // ⟳ de chrome://extensions, o publicar una version nueva) el script viejo
+  // MUERE con su contexto mientras la bandera sigue puesta en la pagina. La
+  // inyeccion nueva la veia, se iba, y no quedaba nadie escuchando: la
+  // extension quedaba muda en toda pestana ya abierta hasta recargarla a mano.
+  //
+  // __fullshotCleanup pertenece al contexto viejo: si sigue vivo, quita su
+  // listener limpiamente; si murio, llamarlo lanza y no pasa nada. Los dos
+  // casos terminan con exactamente un listener, el de este contexto.
+  if (typeof window.__fullshotCleanup === "function") {
+    try { window.__fullshotCleanup(); } catch (_) { /* contexto invalidado */ }
+  }
 
   const state = {
     originalScrollX: 0,
     originalScrollY: 0,
     styleEl: null,
     hiddenFixed: [],
+    pane: null,            // panel con scroll interno, si la pagina usa uno
+    paneOriginalTop: 0,
   };
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -40,8 +54,84 @@
     );
   }
 
+  // --- Panel con scroll interno ----------------------------------------
+  //
+  // Gmail, Notion, Slack y casi cualquier app web no desplazan el documento:
+  // mueven el contenido dentro de un panel, y el documento mide exactamente una
+  // pantalla. docHeight() devuelve la altura de la ventana, el orquestador
+  // calcula un solo tramo, y sale una captura de lo visible y nada mas.
+  //
+  // Esto SOLO se activa cuando el documento no scrollea. Si la pagina se
+  // desplaza normal no se toca nada: ese camino ya funciona y no merece una
+  // heuristica delante.
+  const PANE_MIN_EXTRA = 200;      // px ocultos minimos para que valga la pena
+  const PANE_SCORE_CAP = 20000;    // techo del desempate por contenido oculto
+
+  function findScrollPane() {
+    if (docHeight() > window.innerHeight + 4) return null;   // el documento si scrollea
+
+    const vw = window.innerWidth, vh = window.innerHeight;
+
+    // Primera pasada barata: solo propiedades de layout, sin calcular estilos.
+    // En una app grande esto recorre miles de nodos, asi que el filtro caro va
+    // despues y sobre los pocos que sobrevivan.
+    const todos = document.body ? document.body.getElementsByTagName("*") : [];
+    const candidatos = [];
+    for (let i = 0; i < todos.length; i++) {
+      const el = todos[i];
+      if (el.clientHeight < vh * 0.3) continue;
+      if (el.scrollHeight - el.clientHeight < PANE_MIN_EXTRA) continue;
+      candidatos.push(el);
+    }
+    if (!candidatos.length) return null;
+
+    let mejor = null, mejorPuntaje = 0;
+    for (const el of candidatos) {
+      const oy = getComputedStyle(el).overflowY;
+      if (oy !== "auto" && oy !== "scroll" && oy !== "overlay") continue;
+
+      const r = el.getBoundingClientRect();
+      const w = Math.min(r.right, vw) - Math.max(r.left, 0);
+      const h = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      if (w < vw * 0.25 || h < vh * 0.25) continue;      // no es el area principal
+
+      // Gana el que mas pantalla ocupa. Lo oculto desempata, pero con techo: sin
+      // el, un panel diminuto con 100.000 px dentro le ganaria al principal.
+      const puntaje = w * h * Math.min(el.scrollHeight - el.clientHeight, PANE_SCORE_CAP);
+      if (puntaje > mejorPuntaje) { mejorPuntaje = puntaje; mejor = el; }
+    }
+    return mejor;
+  }
+
+  // El rectangulo visible del panel, en pixeles CSS. Es lo que el visor recorta
+  // de cada captura: fuera queda la barra lateral y el encabezado de la app,
+  // que si no se repetirian en cada tramo.
+  function paneRect(el) {
+    const r = el.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.round(r.left)),
+      y: Math.max(0, Math.round(r.top)),
+      width:  Math.round(Math.min(r.right,  window.innerWidth)  - Math.max(r.left, 0)),
+      height: Math.round(Math.min(r.bottom, window.innerHeight) - Math.max(r.top,  0)),
+    };
+  }
+
+  // Alto y desplazamiento del objetivo, sea el documento o el panel.
+  const targetHeight = () => (state.pane ? state.pane.scrollHeight : docHeight());
+  const targetView   = () => (state.pane ? state.pane.clientHeight : window.innerHeight);
+  const targetGoTo   = (y) => {
+    if (state.pane) state.pane.scrollTop = y;
+    else window.scrollTo(0, y);
+  };
+  const targetTop    = () => (state.pane ? state.pane.scrollTop : window.scrollY);
+
   function injectStyle() {
     if (state.styleEl) return;
+    // Ahora que cada captura reinyecta el script, el estado nace vacio. Si una
+    // captura anterior murio a medias, su <style> sigue en el DOM: se reusa por
+    // id en vez de apilar otro igual encima.
+    const previo = document.getElementById("__fullshot_style__");
+    if (previo) { state.styleEl = previo; return; }
     const el = document.createElement("style");
     el.id = "__fullshot_style__";
     el.textContent = `
@@ -100,22 +190,22 @@
   const WARM_MAX_GROWTH = 5;
 
   async function warmLazyContent() {
-    const vh = window.innerHeight;
+    const vh = Math.max(1, targetView());
     const startedAt = Date.now();
-    const initialHeight = Math.max(1, docHeight());
+    const initialHeight = Math.max(1, targetHeight());
     let h = initialHeight;
     let y = 0;
     while (y < h) {
       if (Date.now() - startedAt > WARM_BUDGET_MS) break;
       if (h > initialHeight * WARM_MAX_GROWTH) break;   // infinite scroll
-      window.scrollTo(0, y);
+      targetGoTo(y);
       await sleep(60);
       y += vh;
-      h = docHeight();
+      h = targetHeight();
     }
-    window.scrollTo(0, h);
+    targetGoTo(h);
     await sleep(150);
-    window.scrollTo(0, 0);
+    targetGoTo(0);
     await sleep(150);
   }
 
@@ -178,33 +268,38 @@
     });
   }
 
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  const onMessage = (msg, _sender, sendResponse) => {
     (async () => {
       switch (msg.type) {
         case "FS_PREPARE": {
           state.originalScrollX = window.scrollX;
           state.originalScrollY = window.scrollY;
           injectStyle();
+          state.pane = findScrollPane();
+          state.paneOriginalTop = state.pane ? state.pane.scrollTop : 0;
           await warmLazyContent();
+          // El rectangulo se mide DESPUES del warm-up y con el panel arriba,
+          // que es el estado en el que se toma cada captura.
           sendResponse({
             ok: true,
             viewportWidth: window.innerWidth,
             viewportHeight: window.innerHeight,
             totalWidth: docWidth(),
-            totalHeight: docHeight(),
+            totalHeight: targetHeight(),
             devicePixelRatio: window.devicePixelRatio || 1,
             originalScrollY: state.originalScrollY,
+            pane: state.pane ? paneRect(state.pane) : null,
           });
           break;
         }
         case "FS_SCROLL": {
-          window.scrollTo(0, msg.y);
+          targetGoTo(msg.y);
           await sleep(40);
           sendResponse({
             ok: true,
-            scrollX: window.scrollX,
-            scrollY: window.scrollY,
-            totalHeight: docHeight(),
+            scrollX: state.pane ? 0 : window.scrollX,
+            scrollY: targetTop(),
+            totalHeight: targetHeight(),
           });
           break;
         }
@@ -230,6 +325,10 @@
         case "FS_RESTORE": {
           restoreFixed();
           removeStyle();
+          if (state.pane) {
+            try { state.pane.scrollTop = state.paneOriginalTop; } catch (_) {}
+            state.pane = null;
+          }
           window.scrollTo(
             state.originalScrollX,
             typeof msg.y === "number" ? msg.y : state.originalScrollY
@@ -242,5 +341,8 @@
       }
     })();
     return true; // async response
-  });
+  };
+
+  chrome.runtime.onMessage.addListener(onMessage);
+  window.__fullshotCleanup = () => chrome.runtime.onMessage.removeListener(onMessage);
 })();

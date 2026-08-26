@@ -12,7 +12,8 @@ Web Store in August 2026.
   and opens `viewer.html`.
 - `page.js` — content script injected on demand. Controls scrolling, hides
   scrollbars, disables smooth scrolling, triggers lazy-loading and hides
-  `fixed`/`sticky` elements.
+  `fixed`/`sticky` elements. Also decides WHAT scrolls: the document, or an
+  inner pane (see "Inner scroll panes").
 - `viewer.js` — stitches the slices onto a canvas, shows the preview, exports
   PNG/JPG/PDF.
 - `minipdf.js` — writes the PDF: one full-bleed JPEG per page, nothing else.
@@ -55,6 +56,11 @@ Web Store in August 2026.
 7. The lazy-load warm-up is bounded by time and growth ratio, not by a step
    count. A step cap gives up on tall pages, which is precisely where lazy
    loading leaves white gaps.
+8. Inner-pane mode engages ONLY when the document itself does not scroll
+   (`docHeight() <= innerHeight + 4`). Pages that scroll normally must keep
+   taking the original path untouched: that path works, and it does not deserve
+   a heuristic in front of it. Never "unify" the two by always running the pane
+   detection.
 
 ## Two capture modes
 
@@ -70,6 +76,39 @@ before capturing, or the overlay itself lands in the shot.
 The selection arrives in CSS pixels and the capture comes back in display
 pixels, so the rectangle is multiplied by `capturedWidth / viewportWidth` before
 it is stored. The viewer applies `stored.region` when building.
+
+## Inner scroll panes
+
+Gmail, Notion, Slack and most web apps do not scroll the document. They move
+content inside a pane, and the document measures exactly one viewport. So
+`docHeight()` returned the window height, the orchestrator computed a single
+step, and the capture came out as one screenshot of whatever was on screen.
+That was the long-standing known gap, the one GoFullPage does not solve either.
+
+`findScrollPane()` in `page.js` picks the pane: two passes, because a large app
+has thousands of nodes. The first pass reads only layout properties (cheap,
+one forced layout) and keeps elements taller than 30% of the viewport with at
+least `PANE_MIN_EXTRA` px hidden below. The second pass runs `getComputedStyle`
+and `getBoundingClientRect` on the few survivors and scores them by
+`visible area x hidden content`, with the hidden part capped by
+`PANE_SCORE_CAP`. Without that cap a tiny scroller holding 100,000 px would
+outrank the main pane.
+
+`paneRect()` returns the pane's VISIBLE rectangle. That rect is what the viewer
+crops out of every slice, which is what keeps the sidebar and the app header
+from repeating down the stitched image. `background.js` passes it through as
+`pane`, and uses `pane.height` as the scroll step so the crops tile exactly.
+
+Verified against four fixtures with the real functions: a normally scrolling
+document returns null, a Gmail-shaped layout returns the pane with the sidebar
+excluded from the rect, a small scroller is ignored, and a page that has both a
+scrolling document and a pane returns null.
+
+⚠️ **When the pane extends below the viewport**, its last
+`clientHeight - rect.height` pixels are never on screen, so
+`captureVisibleTab` can never see them. The stitcher crops instead of leaving a
+white band. That shortfall is physics, not a bug: do not try to "fix" it by
+padding the canvas.
 
 ## Crop
 
@@ -106,8 +145,8 @@ The last error is also kept in `chrome.storage.local.fs_lastError`.
 
 ## Known gaps
 
-- Pages that scroll inside an inner container rather than the body are not
-  captured in full.
+- Pages whose inner pane extends below the viewport lose the sliver that never
+  renders on screen. See "Inner scroll panes".
 - Does not work on `chrome://`, `chrome-extension://` or the Chrome Web Store
   (Chrome restriction).
 

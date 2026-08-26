@@ -86,12 +86,17 @@ async function build() {
   // Captures come scaled by the display devicePixelRatio.
   const scale = first.naturalWidth / stored.viewportWidth;
 
-  const rawW = first.naturalWidth;
+  // Con scroll interno, cada captura trae la app entera y hay que recortar el
+  // panel de cada una antes de apilarlas. Sin el, la barra lateral y el
+  // encabezado se repetirian en cada tramo.
+  const pane = stored.pane || null;
+
+  const rawW = pane ? Math.round(pane.width * scale) : first.naturalWidth;
   // Real height covered by the slices. If for some reason the page would not
   // let us reach the bottom, we crop instead of leaving a white band.
-  const covered = Math.max(
-    ...images.map(({ img, y }) => y + img.naturalHeight / scale)
-  );
+  const covered = pane
+    ? Math.max(...images.map(({ y }) => y + pane.height))
+    : Math.max(...images.map(({ img, y }) => y + img.naturalHeight / scale));
   const rawH = Math.round(Math.min(stored.totalHeight, covered) * scale);
 
   let f = Math.min(1, MAX_DIM / rawW, MAX_DIM / rawH, Math.sqrt(MAX_AREA / (rawW * rawH)));
@@ -107,13 +112,29 @@ async function build() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   for (const { img, y } of images) {
-    ctx.drawImage(
-      img,
-      0,
-      y * scale * f,
-      img.naturalWidth * f,
-      img.naturalHeight * f
-    );
+    if (pane) {
+      // Los bordes de destino se redondean como POSICIONES, no como alturas: el
+      // fondo de un tramo es el tope del siguiente, exacto. Redondear la altura
+      // por separado deja medio pixel suelto en cada juntura, y el navegador lo
+      // resuelve interpolando: una linea tenue cruzando la imagen en cada corte.
+      const dy0 = Math.round(y * scale * f);
+      const dy1 = Math.round((y + pane.height) * scale * f);
+      ctx.drawImage(
+        img,
+        Math.round(pane.x * scale), Math.round(pane.y * scale),
+        Math.round(pane.width * scale), Math.round(pane.height * scale),
+        0, dy0,
+        canvas.width, Math.max(1, dy1 - dy0)
+      );
+    } else {
+      ctx.drawImage(
+        img,
+        0,
+        y * scale * f,
+        img.naturalWidth * f,
+        img.naturalHeight * f
+      );
+    }
   }
 
   if (f < 1) {
@@ -138,6 +159,21 @@ async function build() {
   fullCanvas = canvas;          // kept so Undo crop can restore it
   els.preview.src = canvas.toDataURL("image/png");
   els.preview.classList.remove("hidden");
+
+  // El estado arranca con "Stitching the slices…" escrito en el HTML y nadie lo
+  // borraba: al terminar seguia ahi. Con una vista previa de varios miles de
+  // pixeles, que tarda un momento en pintar, la pestana parecia colgada.
+  els.status.textContent = "";
+  els.status.classList.add("hidden");
+
+  // Cuando la pagina scrollea en un panel, decirlo: es la diferencia entre
+  // "esto salio raro" y "esto capturo el panel de la app".
+  if (pane) {
+    showNote(
+      `Captured this app's scrolling panel (${images.length} slices, ` +
+      `${pane.width}x${pane.height} CSS px). The page itself does not scroll.`
+    );
+  }
   els.status.classList.add("hidden");
 }
 
