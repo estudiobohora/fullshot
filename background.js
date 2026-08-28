@@ -14,11 +14,19 @@ let busy = false;
 
 chrome.action.onClicked.addListener((tab) => start(tab));
 
-chrome.commands.onCommand.addListener(async (command) => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab) return;
-  if (command === "capture-full-page") start(tab);
-  else if (command === "capture-region") startRegion(tab);
+// The event hands us the tab the shortcut fired on, and that object carries url
+// and title because the shortcut itself is what granted activeTab. Re-querying
+// with chrome.tabs.query() threw both away: with no host_permissions that call
+// comes back with url and title UNDEFINED, so isBlocked("") was always false
+// (no friendly ✕ on chrome:// pages) and every capture taken by keyboard was
+// named "screenshot" instead of the page title. The toolbar click never had the
+// bug because chrome.action.onClicked passes the full tab. The query stays only
+// as a fallback for a Chrome old enough not to pass the argument.
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  const target = tab || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+  if (!target || !target.id) return;
+  if (command === "capture-full-page") start(target);
+  else if (command === "capture-region") startRegion(target);
 });
 
 // Chrome refuses to let any extension script or capture these, so we say so
@@ -248,6 +256,11 @@ async function startRegion(tab) {
     chrome.storage.local.set({ fs_lastError: String((err && err.stack) || err) });
     await setBadge(tab.id, "!", "#dc2626");
     setTimeout(() => setBadge(tab.id, ""), 4000);
+    // A propósito NO se manda FS_RESTORE aquí, a diferencia de start(). En modo
+    // región nunca corre FS_PREPARE, así que state.originalScrollY vale 0 y un
+    // FS_RESTORE tiraría la página hasta arriba por un error que no movió nada.
+    // Y no hay nada que restaurar: el overlay se quita dentro de pickRegion y el
+    // scroll jamás se toca.
   } finally {
     busy = false;
   }

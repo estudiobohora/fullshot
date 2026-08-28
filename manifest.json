@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FullShot - Open Source Full Page Screenshot",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Open source full page screenshot. Scrolls, stitches, exports PNG, JPG or PDF. 33 KB, no account, no servers, no telemetry.",
   "permissions": [
     "activeTab",

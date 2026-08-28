@@ -32,6 +32,11 @@ Web Store in August 2026.
   applied to, which is exactly how it ended up downloading stale names.
 - `tools/make-icons.py` — generates the four icon sizes. The icons are drawn by
   code, not by hand, so they can be adjusted instead of being opaque binaries.
+- `tools/pack.sh` — builds the ZIP for the Web Store. Ships an explicit file
+  list, never the whole folder, and refuses to produce a ZIP that contains any
+  URL other than the two Web Store comparisons in `isBlocked()`. Zipping the
+  folder by hand sweeps in `tools/*.py` and the `.md` files, and
+  `make-store-shots.py` carries a URL. Always package with this.
 
 ## Invariants that must NOT be broken
 
@@ -61,6 +66,15 @@ Web Store in August 2026.
    taking the original path untouched: that path works, and it does not deserve
    a heuristic in front of it. Never "unify" the two by always running the pane
    detection.
+9. In region mode NOTHING may change the page layout between the selection and
+   the capture. `FS_PICK_REGION` deliberately does not inject the scrollbar
+   hiding style: on Windows and Linux the scrollbar is classic, not overlay, so
+   hiding it widens the content area by 15 px. The user then selects on a page
+   that reflows back the moment the style is removed, and the capture is taken
+   after that reflow, so the shot is not the page the user was looking at.
+   Measured before the fix: a 26 px crop placed over its target came out 53.8%
+   on target. The same trap is waiting for anything else that touches layout
+   here: zoom, `overflow`, injected margins.
 
 ## Two capture modes
 

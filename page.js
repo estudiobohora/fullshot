@@ -345,7 +345,13 @@
       document.documentElement.appendChild(layer);
 
       let start = null;
-      const at = (e) => ({ x: e.clientX, y: e.clientY });
+      // Clamped to the viewport: with pointer capture the drag can end outside
+      // the window, and an unclamped coordinate would build a rectangle that
+      // reaches past the edge of the capture.
+      const at = (e) => ({
+        x: Math.min(Math.max(e.clientX, 0), window.innerWidth),
+        y: Math.min(Math.max(e.clientY, 0), window.innerHeight),
+      });
       const paint = (a, b) => {
         const l = Math.min(a.x, b.x), t = Math.min(a.y, b.y);
         const w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
@@ -354,7 +360,6 @@
         return { x: l, y: t, width: w, height: h };
       };
 
-      let current = null;
       const done = (value) => {
         window.removeEventListener("keydown", onKey, true);
         layer.remove();
@@ -364,14 +369,24 @@
         if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(null); }
       };
 
-      box.addEventListener("mousedown", (e) => { e.preventDefault(); start = at(e); });
-      box.addEventListener("mousemove", (e) => { if (start) current = paint(start, at(e)); });
-      box.addEventListener("mouseup", (e) => {
+      // Pointer events with capture, not mouse events. Con mouseup el arrastre
+      // que termina fuera de la ventana nunca resuelve: el overlay se queda
+      // encima de la página y el usuario tiene que adivinar que Esc lo quita.
+      // setPointerCapture hace que el pointerup llegue igual, se suelte donde se
+      // suelte.
+      box.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        start = at(e);
+        try { box.setPointerCapture(e.pointerId); } catch (_) {}
+      });
+      box.addEventListener("pointermove", (e) => { if (start) paint(start, at(e)); });
+      box.addEventListener("pointerup", (e) => {
         if (!start) return;
         const r = paint(start, at(e));
         // Un clic suelto no es una selección.
         done(r.width < 8 || r.height < 8 ? null : r);
       });
+      box.addEventListener("pointercancel", () => done(null));
       window.addEventListener("keydown", onKey, true);
     });
   }
@@ -412,9 +427,18 @@
           break;
         }
         case "FS_PICK_REGION": {
-          injectStyle();                       // hides scrollbars while selecting
+          // Deliberadamente NO se inyecta el estilo aquí. Esconder la barra de
+          // scroll ensancha el área de contenido 15 px en Windows y Linux, donde
+          // la barra es clásica y no overlay. El usuario selecciona sobre esa
+          // página ensanchada, se devuelve la barra, la página se reacomoda, y
+          // recién entonces se captura: la foto no es la página que el usuario
+          // estaba mirando. Medido: un recorte de 26 px sobre el objetivo salía
+          // 53.8% correcto.
+          //
+          // En modo región no se hace scroll, así que esconder la barra no
+          // compra nada. Regla para el futuro: entre la selección y la captura,
+          // el layout de la página no se toca.
           const r = await pickRegion();
-          removeStyle();
           // Un frame para que la capa desaparezca antes de que se capture.
           await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
           sendResponse({
