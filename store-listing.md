@@ -285,3 +285,37 @@ python tools/make-promo-tile.py
 ## Store icon
 
 `icons/icon128.png`, already the right size.
+
+---
+
+## Packaging
+
+Twelve files, all at the ROOT of the zip. No containing folder, and none of
+`tools/`, `store-assets/`, `CLAUDE.md`, `store-listing.md`, `README.md` or
+`.gitignore`:
+
+```
+manifest.json  background.js  page.js  viewer.html  viewer.js  settings.js
+minipdf.js  LICENSE  icons/icon16.png  icons/icon32.png  icons/icon48.png
+icons/icon128.png
+```
+
+Bump `version` in `manifest.json` first or the store rejects the upload as a
+duplicate.
+
+⚠️ **Do NOT build the zip with PowerShell.** Both `Compress-Archive` and
+`[System.IO.Compression.ZipFile]` on Windows PowerShell 5.1 write the entries as
+`icons\icon16.png`, with a backslash. That is not a valid zip path separator, and
+Chrome then cannot find the icons the manifest points at. The archive looks fine
+in Explorer and passes an integrity test, which is what makes it dangerous.
+
+`zip` is not installed in this environment either. Use Windows' own `tar`, which
+writes proper forward slashes: stage the twelve files in a temp folder and run
+
+```
+tar.exe -a -c -f fullshot-<version>.zip -C <stage> manifest.json background.js \
+  page.js viewer.html viewer.js settings.js minipdf.js LICENSE icons
+```
+
+Then verify before uploading: `unzip -l` must show `icons/icon16.png` with a
+forward slash, and `unzip -l ... | grep -c jspdf` must return 0.
