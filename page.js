@@ -23,6 +23,8 @@
     originalScrollY: 0,
     styleEl: null,
     hiddenFixed: [],
+    hiddenOver: [],       // tapado por encima del panel, escondido antes del 1er tramo
+    hiddenPinned: [],     // clavado DENTRO del panel: no se mueve al bajarlo
     pane: null,            // panel con scroll interno, si la pagina usa uno
     paneOriginalTop: 0,
   };
@@ -176,6 +178,110 @@
       else el.style.removeProperty("visibility");
     }
     state.hiddenFixed = [];
+    for (const [el, value, priority] of state.hiddenOver) {
+      if (value) el.style.setProperty("visibility", value, priority);
+      else el.style.removeProperty("visibility");
+    }
+    state.hiddenOver = [];
+    for (const [el, value, priority] of state.hiddenPinned) {
+      if (value) el.style.setProperty("visibility", value, priority);
+      else el.style.removeProperty("visibility");
+    }
+    state.hiddenPinned = [];
+  }
+
+  // Mobiliario de la aplicacion encima del panel.
+  //
+  // Cuando el scroll es interno no existe el "encabezado que queremos una sola
+  // vez arriba": el recorte empieza en el borde del panel, y todo lo que flote
+  // sobre ese recorte sin ser parte del panel se cuela en cada tramo. En Gmail
+  // eso son la ventanita de chat, que sale repetida una vez por tramo, y la
+  // barra de Responder, que queda estampada a media imagen porque estaba en el
+  // primer tramo. Por eso en modo panel esto se llama ANTES del primer tramo,
+  // no despues.
+  //
+  // El filtro por `position` no basta y por eso aqui la regla es geometrica: el
+  // chat de Gmail cuelga de un contenedor fijo de tamano cero, asi que el padre
+  // se descarta por medir 0x0 y el hijo no llega a ser "fixed". Nada de eso lo
+  // ve hideFixed(). Superponerse al recorte sin ser pariente del panel si lo ve.
+  function hideOverPane() {
+    if (!state.pane || state.hiddenOver.length) return;
+    const p = paneRect(state.pane);
+    const right = p.x + p.width, bottom = p.y + p.height;
+
+    // Se baja por el arbol en vez de recorrer todos los nodos: al llegar a algo
+    // que NO es pariente del panel se esconde entero y no se entra, asi que se
+    // tocan decenas de elementos y no miles.
+    const walk = (parent) => {
+      for (const el of parent.children) {
+        if (el === state.styleEl || el === state.pane) continue;
+        // Un ancestro del panel jamas se esconde: el panel vive dentro.
+        if (el.contains(state.pane)) { walk(el); continue; }
+        if (state.pane.contains(el)) continue;      // contenido real del panel
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        if (r.right <= p.x || r.left >= right) continue;
+        if (r.bottom <= p.y || r.top >= bottom) continue;
+        state.hiddenOver.push([el, el.style.getPropertyValue("visibility"), el.style.getPropertyPriority("visibility")]);
+        el.style.setProperty("visibility", "hidden", "important");
+      }
+    };
+    if (document.body) walk(document.body);
+  }
+
+  // Lo que esta clavado DENTRO del panel.
+  //
+  // La barra de Responder de Gmail no es "fixed" ni "sticky": es `relative`,
+  // cuelga del propio panel, y aun asi se queda quieta cuando el panel baja.
+  // Ni hideFixed() ni hideOverPane() la ven, y acaba estampada a media imagen.
+  //
+  // Preguntar por el estilo no sirve, asi que se pregunta por el comportamiento:
+  // se baja el panel un poco y se mira quien NO se movio. Eso es exactamente lo
+  // que define al mobiliario, y no depende de como cada aplicacion lo consiga.
+  const PIN_PROBE_PX = 200;
+  const PIN_TOLERANCE_PX = 2;
+
+  async function hidePinnedInPane() {
+    if (!state.pane || state.hiddenPinned.length) return;
+    const pane = state.pane;
+    const maxScroll = pane.scrollHeight - pane.clientHeight;
+    if (maxScroll < 40) return;                  // no hay donde bajar: no hay prueba
+
+    const p = paneRect(pane);
+    const right = p.x + p.width, bottom = p.y + p.height;
+
+    const antes = [];
+    for (const el of pane.getElementsByTagName("*")) {
+      const r = el.getBoundingClientRect();
+      if (r.width < 40 || r.height < 12) continue;
+      // Un bloque grande es contenido, no mobiliario. Este tope es lo que hace
+      // que la regla no pueda tragarse media captura por un falso positivo.
+      if (r.height > p.height * 0.6) continue;
+      if (r.right <= p.x || r.left >= right) continue;
+      if (r.bottom <= p.y || r.top >= bottom) continue;
+      antes.push([el, r.top]);
+    }
+    if (!antes.length) return;
+
+    const origen = pane.scrollTop;
+    const probe = Math.min(PIN_PROBE_PX, maxScroll);
+    pane.scrollTop = origen + probe;
+    await sleep(80);
+
+    // Si el panel no se movio de verdad, la prueba no dice nada y todo saldria
+    // "clavado". En ese caso no se esconde nada.
+    if (Math.abs(pane.scrollTop - origen) >= probe - 4) {
+      for (const [el, top0] of antes) {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        if (Math.abs(top0 - r.top) > PIN_TOLERANCE_PX) continue;   // se movio: es contenido
+        state.hiddenPinned.push([el, el.style.getPropertyValue("visibility"), el.style.getPropertyPriority("visibility")]);
+        el.style.setProperty("visibility", "hidden", "important");
+      }
+    }
+
+    pane.scrollTop = origen;
+    await sleep(80);
   }
 
   // Walks the page once to trigger lazy-loaded images before measuring.
@@ -319,7 +425,9 @@
         }
         case "FS_HIDE_FIXED": {
           hideFixed();
-          sendResponse({ ok: true, hidden: state.hiddenFixed.length });
+          hideOverPane();          // no hace nada si el scroll no es interno
+          await hidePinnedInPane();
+          sendResponse({ ok: true, hidden: state.hiddenFixed.length + state.hiddenOver.length + state.hiddenPinned.length });
           break;
         }
         case "FS_RESTORE": {

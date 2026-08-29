@@ -102,6 +102,15 @@ async function start(tab) {
     // the viewport exactly: we measure it, and the real step comes from that.
     await ask(tab.id, { type: "FS_SCROLL", y: 0 });
     await sleep(SETTLE_MS);
+
+    // Con panel el mobiliario se esconde ANTES del primer tramo. En una pagina
+    // normal se esconde despues, para conservar el encabezado una vez arriba;
+    // aqui no hay tal encabezado, y lo que hay es una barra de Responder pegada
+    // abajo del panel que quedaria estampada a media imagen.
+    if (pane && settings.hideFixed) {
+      await ask(tab.id, { type: "FS_HIDE_FIXED" });
+      await sleep(SETTLE_MS);
+    }
     const firstUrl = await captureVisible(tab.windowId);
     const { width: capW, height: capH } = await measure(firstUrl);
 
@@ -122,7 +131,7 @@ async function start(tab) {
     shots.push({ y: 0, x: 0, dataUrl: firstUrl });
     await setBadge(tab.id, `1/${steps}`);
 
-    if (steps > 1 && settings.hideFixed) {
+    if (steps > 1 && settings.hideFixed && !pane) {   // con panel ya se hizo arriba
       // Fixed headers/footers would repeat in every slice: we hide them after
       // the first one and put them back at the end. Some pages keep real
       // content in a sticky panel, which is why this can be turned off.
