@@ -38,7 +38,11 @@ Settings live in `chrome.storage.local`, so they stay on this machine and never 
 
 ## How it works
 
-Chrome will not let an extension capture anything outside the visible viewport, so the page has to be walked:
+Chrome will not let an extension capture anything outside the visible viewport, so the page has to be walked.
+
+FullShot first works out **what** scrolls. Most pages scroll the document. Web apps like Gmail, Notion and Slack do not: the document is exactly one window tall and the content moves inside a pane. FullShot finds that pane, scrolls it instead, and crops every capture to the pane so the sidebar and the app header do not repeat down the image. Pages that scroll normally take the original path, untouched.
+
+Then it walks it:
 
 1. Injects a script into the page, hides the scrollbars and turns off smooth scrolling.
 2. Scrolls through the whole page once to trigger lazy-loaded images.
@@ -49,7 +53,7 @@ Chrome will not let an extension capture anything outside the visible viewport, 
 ## Known limits
 
 - Does not work on `chrome://`, `chrome-extension://`, the Chrome Web Store or the developer dashboard. Chrome blocks extensions from touching those pages, so no extension can capture them.
-- Pages that scroll inside an inner container instead of the document body are not captured in full.
+- Panes that extend below the window lose the strip that never renders on screen. Chrome can only capture what is actually displayed, so those pixels do not exist to capture.
 - A Chrome canvas tops out around 250 megapixels. On very tall pages the capture is scaled down automatically and the preview tells you so.
 - The PDF comes out as a single long page. Past 200 inches tall it is split across several.
 

@@ -95,18 +95,31 @@ async function start(tab) {
     const info = await ask(tab.id, { type: "FS_PREPARE" });
     if (!info || !info.ok) throw new Error("Could not read the page.");
 
-    const { viewportWidth, totalHeight, totalWidth, originalScrollY } = info;
+    const { viewportWidth, totalHeight, totalWidth, originalScrollY, pane } = info;
     const shots = [];
 
     // First slice from the top. We do not assume the captured image matches
     // the viewport exactly: we measure it, and the real step comes from that.
     await ask(tab.id, { type: "FS_SCROLL", y: 0 });
     await sleep(SETTLE_MS);
+
+    // With a pane, furniture is hidden BEFORE the first slice. On a normal page
+    // it is hidden after, on purpose, to keep the header once at the top; here
+    // there is no such header, and what there is instead is a Reply bar pinned
+    // to the bottom of the pane that would be stamped across the middle.
+    if (pane && settings.hideFixed) {
+      await ask(tab.id, { type: "FS_HIDE_FIXED" });
+      await sleep(SETTLE_MS);
+    }
     const firstUrl = await captureVisible(tab.windowId);
     const { width: capW, height: capH } = await measure(firstUrl);
 
     const scale = capW / viewportWidth;          // the display pixel ratio
-    const stepPx = Math.max(50, Math.floor(capH / scale)); // real captured height, in CSS px
+    // Con panel, el paso es la altura del PANEL, no la de la ventana: es lo que
+    // el visor recorta de cada captura, asi que los tramos encajan exactos.
+    const stepPx = pane
+      ? Math.max(50, pane.height)
+      : Math.max(50, Math.floor(capH / scale)); // real captured height, in CSS px
 
     // The page can grow while we capture it: lazy content that only loads once
     // you get near it makes the document taller mid-run. Measuring the height
@@ -118,7 +131,7 @@ async function start(tab) {
     shots.push({ y: 0, x: 0, dataUrl: firstUrl });
     await setBadge(tab.id, `1/${steps}`);
 
-    if (steps > 1 && settings.hideFixed) {
+    if (steps > 1 && settings.hideFixed && !pane) {   // with a pane it ran above
       // Fixed headers/footers would repeat in every slice: we hide them after
       // the first one and put them back at the end. Some pages keep real
       // content in a sticky panel, which is why this can be turned off.
@@ -153,6 +166,7 @@ async function start(tab) {
         scale,
         totalWidth,
         totalHeight: docHeight,   // the final height, or the viewer would crop
+        pane,                     // recorte por tramo cuando el scroll es interno
         title: tab.title || "screenshot",
         url: tab.url || "",
         sourceTabId: tab.id,

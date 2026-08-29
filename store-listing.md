@@ -56,6 +56,13 @@ and stitches them into a single image. Fixed headers are hidden after the first
 slice so they do not repeat down the screenshot, and the page is walked once
 beforehand to trigger lazy-loaded images.
 
+Web apps are the hard case, and most tools fail it. Gmail, Notion, Slack and
+dashboards do not scroll the page: the content moves inside a panel while the
+page itself measures exactly one screen. Point another tool at your inbox and
+you get one screen and nothing more. FullShot finds that panel, scrolls it, and
+crops every slice to it, so the sidebar, the app header and the buttons pinned
+to the panel do not repeat down the image.
+
 TWO WAYS TO CAPTURE
 
 • Full page (Alt+Shift+P): scrolls and stitches the whole thing.
@@ -107,8 +114,6 @@ Better you know before you install it.
 
 • There is no annotation editor. No arrows, no text, no blur. If you need to
   mark up a screenshot, this is not your tool.
-• Pages that scroll inside an inner panel, like a mail thread or a chat window,
-  are not captured in full yet.
 • It does not work on chrome:// pages or on the Chrome Web Store itself. That is
   a Chrome restriction on every extension, not a fault of this one.
 • Very tall pages are scaled down to fit what a browser canvas can hold, and the
