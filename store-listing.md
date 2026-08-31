@@ -28,10 +28,10 @@ Detailed description below is a dashboard field you can change on its own.
 
 ## Short description
 
-Max 132 characters. This one is 122.
+Max 132 characters. This one is 128.
 
 ```
-Open source full page screenshot. Scrolls, stitches, exports PNG, JPG or PDF. 33 KB, no account, no servers, no telemetry.
+Open source full page screenshot. Scrolls, stitches, exports PNG, JPG or PDF. Under 40 KB, no account, no servers, no telemetry.
 ```
 
 ## Category
@@ -77,10 +77,10 @@ IN THE VIEWER
 • Crop the capture by dragging over the preview
 • Capture again without going back to the tab
 
-33 KB, AND YOU CAN READ ALL OF IT
+UNDER 40 KB, AND YOU CAN READ ALL OF IT
 
-The whole extension is 33 KB. Every other full-page screenshot extension we
-compared it against sits between 93 KB and 366 KB.
+The whole extension is under 40 KB. Every other full-page screenshot extension
+we compared it against sits between 93 KB and 366 KB.
 
 It is small because there is nothing in it but the feature. No bundled
 libraries, not even for the PDF: that file is written by under a hundred lines
@@ -290,32 +290,30 @@ python tools/make-promo-tile.py
 
 ## Packaging
 
-Twelve files, all at the ROOT of the zip. No containing folder, and none of
-`tools/`, `store-assets/`, `CLAUDE.md`, `store-listing.md`, `README.md` or
-`.gitignore`:
+Do not build the zip by hand. Run:
 
 ```
-manifest.json  background.js  page.js  viewer.html  viewer.js  settings.js
-minipdf.js  LICENSE  icons/icon16.png  icons/icon32.png  icons/icon48.png
-icons/icon128.png
+bash tools/pack.sh
 ```
+
+It reads the version out of `manifest.json`, names the file, ships an explicit
+list of twelve files at the ROOT of the archive, and refuses to hand you a zip
+that contains any URL other than the two Web Store comparisons in `isBlocked()`.
+That last check is the one that would have caught the second rejection: zipping
+the folder by hand sweeps in `tools/*.py`, and `make-store-shots.py` carries a
+cdnjs URL inside a file that never runs.
 
 Bump `version` in `manifest.json` first or the store rejects the upload as a
 duplicate.
 
-⚠️ **Do NOT build the zip with PowerShell.** Both `Compress-Archive` and
+⚠️ **Never build it with PowerShell.** Both `Compress-Archive` and
 `[System.IO.Compression.ZipFile]` on Windows PowerShell 5.1 write the entries as
-`icons\icon16.png`, with a backslash. That is not a valid zip path separator, and
-Chrome then cannot find the icons the manifest points at. The archive looks fine
-in Explorer and passes an integrity test, which is what makes it dangerous.
+`icons\icon16.png`, with a backslash. That is not a valid zip path separator and
+Chrome cannot find the icons the manifest points at. The archive still looks fine
+in Explorer and still passes an integrity test, which is what makes it dangerous.
+`pack.sh` now checks for that backslash and aborts.
 
-`zip` is not installed in this environment either. Use Windows' own `tar`, which
-writes proper forward slashes: stage the twelve files in a temp folder and run
-
-```
-tar.exe -a -c -f fullshot-<version>.zip -C <stage> manifest.json background.js \
-  page.js viewer.html viewer.js settings.js minipdf.js LICENSE icons
-```
-
-Then verify before uploading: `unzip -l` must show `icons/icon16.png` with a
-forward slash, and `unzip -l ... | grep -c jspdf` must return 0.
+`zip` is not installed in Git Bash on Windows, so `pack.sh` falls back to the
+system `tar.exe`, which is libarchive and writes proper forward slashes. Note the
+`tar` first on PATH in Git Bash is GNU tar and CANNOT write a zip, which is why
+the script looks for `/c/Windows/System32/tar.exe` explicitly.
